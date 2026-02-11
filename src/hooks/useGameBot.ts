@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { BotMessage, BotResponse } from '../workers/bot.worker';
 
-export function useGameBot(scriptPath: string = new URL('/my_portfolio/wasm/game_bot.js', window.location.origin).href) {
+export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL + 'wasm/game_bot.js?v=2', window.location.origin).href) {
     const workerRef = useRef<Worker | null>(null);
     const [isReady, setIsReady] = useState(false);
     const [board, setBoard] = useState<number[][]>([]);
