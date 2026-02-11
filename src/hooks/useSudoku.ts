@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { SudokuMessage, SudokuResponse } from '../workers/sudoku.worker';
 
-export function useSudoku(scriptPath: string = new URL(import.meta.env.BASE_URL + 'wasm/sudoku.js?v=2', window.location.origin).href) {
+export function useSudoku(scriptPath: string = new URL(import.meta.env.BASE_URL + 'wasm/sudoku.js', window.location.origin).href) {
     const workerRef = useRef<Worker | null>(null);
     const [isReady, setIsReady] = useState(false);
     const [board, setBoard] = useState<number[][]>([]);
