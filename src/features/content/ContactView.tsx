@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Send, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Send, AlertCircle, Loader2 } from 'lucide-react'
 
 type FormStatus = 'idle' | 'sending' | 'success' | 'error'
 
