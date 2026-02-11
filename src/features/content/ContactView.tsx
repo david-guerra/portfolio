@@ -41,7 +41,7 @@ export function ContactView() {
             <section>
                 <h2 className="text-xl text-gruv-yellow font-bold mb-2">./contact</h2>
                 <p className="text-gruv-fg/60 text-sm">
-                    Drop me a message — I'll get back to you as soon as I can.
+                    Drop me a message. I'll get back to you as soon as I can.
                 </p>
             </section>
 
