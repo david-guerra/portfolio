@@ -13,7 +13,7 @@ export function Connect4View({ onBack }: { onBack: () => void }) {
 
     const [selectedCol, setSelectedCol] = useState(3);
 
-    const { isReady, board, gameStatus, winner, makeMove, computeBotMove, resetGame } = useGameBot('/wasm/game_bot.js');
+    const { isReady, board, gameStatus, winner, makeMove, computeBotMove, resetGame } = useGameBot();
 
     useEffect(() => {
         if (gameStatus === 'playing') {
