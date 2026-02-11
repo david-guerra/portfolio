@@ -7,7 +7,7 @@ export function IntroCard({ className, colSpan }: { className?: string, colSpan?
                 <p>
                     <span className="text-gruv-aqua mr-2">{">"}</span>
                     <span className="text-gruv-fg">Hi, I'm </span>
-                    <span className="text-gruv-yellow font-bold typing-effect">David</span>
+                    <span className="text-gruv-yellow font-bold typing-effect">David Guerra</span>
                 </p>
                 <p>
                     <span className="text-gruv-aqua mr-2">{">"}</span>
