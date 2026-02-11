@@ -8,7 +8,7 @@ import { ContactView } from './features/content/ContactView'
 
 function App() {
     return (
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
                 <Route path="/" element={<BentoLayout />}>
                     <Route index element={<AboutView />} />
