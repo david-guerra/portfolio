@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { BentoLayout } from './layouts/BentoLayout'
 import { AboutView } from './features/content/AboutView'
 import { ArcadeView } from './features/content/ArcadeView'
@@ -8,7 +8,7 @@ import { ContactView } from './features/content/ContactView'
 
 function App() {
     return (
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <HashRouter>
             <Routes>
                 <Route path="/" element={<BentoLayout />}>
                     <Route index element={<AboutView />} />
@@ -26,7 +26,7 @@ function App() {
                     } />
                 </Route>
             </Routes>
-        </BrowserRouter>
+        </HashRouter>
     )
 }
 
