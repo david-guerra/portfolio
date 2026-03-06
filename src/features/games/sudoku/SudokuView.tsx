@@ -69,13 +69,11 @@ export function SudokuView({ onBack }: { onBack: () => void }) {
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full items-center justify-center gap-2">
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-center md:justify-between gap-2 mb-2 w-full">
-                <div className="self-start md:self-auto">
-                    <BackButton onClick={onBack} />
-                </div>
-                <div className="flex items-center space-x-2">
+            <div className="flex flex-col md:flex-row w-full md:justify-between items-start md:items-center gap-1" style={{ maxWidth: '360px' }}>
+                <BackButton onClick={onBack} />
+                <div className="flex items-center gap-1 self-center md:self-auto">
                     <button
                         onClick={() => { clearBoard(); setSelectedCell(null); }}
                         className="text-sm px-3 py-1 bg-gruv-bg-soft border border-bento rounded-lg text-gruv-fg/70 hover:text-gruv-red hover:border-gruv-red transition-colors"
@@ -98,15 +96,15 @@ export function SudokuView({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* Board */}
-            <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center w-full">
                 <div
                     className={cn(
-                        "grid border-2 rounded-sm transition-colors duration-700",
+                        "grid border-2 rounded-sm transition-colors duration-700 max-w-full",
                         isSolved ? "border-gruv-green/60" : "border-gruv-fg/60"
                     )}
                     style={{
                         gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-                        width: 'min(100%, 360px)',
+                        width: '360px',
                         aspectRatio: '1',
                     }}
                 >
