@@ -64,5 +64,11 @@ export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL
         }
     }, [isReady]);
 
-    return { isReady, board, gameStatus, winner, makeMove, computeBotMove, lastBotMove, resetGame, error };
+    const setDifficulty = useCallback((depth: number) => {
+        if (workerRef.current && isReady) {
+            workerRef.current.postMessage({ type: 'SET_DIFFICULTY', payload: depth } as BotMessage);
+        }
+    }, [isReady]);
+
+    return { isReady, board, gameStatus, winner, makeMove, computeBotMove, lastBotMove, resetGame, setDifficulty, error };
 }

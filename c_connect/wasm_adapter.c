@@ -8,19 +8,25 @@
 // Global state
 Board g_board;
 Bot g_bot;
+int g_depth = 12;
 
 EMSCRIPTEN_KEEPALIVE
 void wasm_init() {
-  // initGame(&g_board);
   initBot(&g_bot);
   initBoard(&g_board);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasm_set_depth(int depth) {
+  if (depth >= 1 && depth <= 20)
+    g_depth = depth;
 }
 
 EMSCRIPTEN_KEEPALIVE
 int wasm_make_move(int col) {
   if (col < 0 || col >= nCOL)
     return -1;
-  if (g_board.board[0][col] != 0)
+  if (!canPlay(&g_board, col))
     return -1;
 
   updateBoard(&g_board, col);
@@ -30,7 +36,7 @@ int wasm_make_move(int col) {
 
 EMSCRIPTEN_KEEPALIVE
 int wasm_bot_move() {
-  int col = callBot(&g_board, &g_bot);
+  int col = callBot(&g_board, g_depth, &g_bot);
 
   updateBoard(&g_board, col);
 
@@ -44,7 +50,7 @@ EMSCRIPTEN_KEEPALIVE
 int wasm_get_cell(int r, int c) {
   if (r < 0 || r >= nROW || c < 0 || c >= nCOL)
     return 0;
-  return g_board.board[r][c];
+  return getCell(&g_board, r, c);
 }
 
 EMSCRIPTEN_KEEPALIVE
