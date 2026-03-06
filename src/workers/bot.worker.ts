@@ -6,6 +6,7 @@ export type BotMessage =
     | { type: 'USER_MOVE'; payload: number } // col index
     | { type: 'COMPUTE_MOVE'; payload: any }
     | { type: 'RESET'; payload: any }
+    | { type: 'SET_DIFFICULTY'; payload: number } // search depth
 
 export type BotResponse =
     | { type: 'READY' }
@@ -120,6 +121,12 @@ self.onmessage = async (e: MessageEvent<BotMessage>) => {
                     type: 'GAME_UPDATE',
                     payload: { board: getBoardState(), status: 'playing', winner: 0 }
                 });
+                break;
+
+            case 'SET_DIFFICULTY':
+                if (wasmModule) {
+                    wasmModule._wasm_set_depth(payload);
+                }
                 break;
 
             default:

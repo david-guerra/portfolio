@@ -8,7 +8,7 @@ import { StackCard } from '../features/StackCard'
 // Placeholder for now, we will create these feature components next
 export function BentoLayout() {
     return (
-        <div className="min-h-screen bg-gruv-bg text-gruv-fg font-mono p-6 md:p-8 flex items-start md:items-center justify-center">
+        <div className="min-h-screen md:h-screen md:max-h-screen bg-gruv-bg text-gruv-fg font-mono p-6 md:p-8 flex items-start md:items-center justify-center md:overflow-hidden">
             <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-4 gap-bento-gap md:grid-rows-[auto_1fr_1fr]">
 
                 {/* Top Full Width Intro */}

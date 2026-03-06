@@ -3,6 +3,7 @@ import { useSudoku } from '../../../hooks/useSudoku'
 import { cn } from '../../../lib/utils'
 import { BackButton } from '../../../components/ui/BackButton'
 
+
 const ROWS = 9;
 const COLS = 9;
 
@@ -70,7 +71,7 @@ export function SudokuView({ onBack }: { onBack: () => void }) {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-center md:justify-between gap-4 mb-4 w-full">
+            <div className="flex flex-col md:flex-row items-center md:justify-between gap-2 mb-2 w-full">
                 <div className="self-start md:self-auto">
                     <BackButton onClick={onBack} />
                 </div>
@@ -158,7 +159,7 @@ export function SudokuView({ onBack }: { onBack: () => void }) {
 
                 {/* Win message */}
                 {isSolved && (
-                    <div className="mt-6 text-center space-y-3 animate-fade-in">
+                    <div className="mt-3 text-center space-y-3 animate-fade-in">
                         <p className="text-gruv-green font-bold text-lg">Sudoku Complete!</p>
                         <button
                             onClick={handleNewGame}
@@ -172,7 +173,7 @@ export function SudokuView({ onBack }: { onBack: () => void }) {
 
             {/* Footer hint */}
             {!isSolved && (
-                <div className="mt-4 text-center text-gruv-fg/30 text-xs">
+                <div className="mt-2 text-center text-gruv-fg/30 text-xs">
                     [1-9] PLACE   [DEL] CLEAR   [←↑↓→] NAVIGATE
                 </div>
             )}

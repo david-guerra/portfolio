@@ -2,43 +2,40 @@
 #include "board.h"
 
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
-bool checkWinState(int x, int y, Board *b) {
-  bool state = false;
-  if (y + 3 < nCOL) {
-    state |= (b->board[x][y] == b->board[x][y + 1] &&
-              b->board[x][y] == b->board[x][y + 2] &&
-              b->board[x][y] == b->board[x][y + 3]);
-  }
-  if (x + 3 < nROW) {
-    state |= (b->board[x][y] == b->board[x + 1][y] &&
-              b->board[x][y] == b->board[x + 2][y] &&
-              b->board[x][y] == b->board[x + 3][y]);
-  }
-  if (x + 3 < nROW && y + 3 < nCOL) {
-    state |= (b->board[x][y] == b->board[x + 1][y + 1] &&
-              b->board[x][y] == b->board[x + 2][y + 2] &&
-              b->board[x][y] == b->board[x + 3][y + 3]);
-  }
-  if (x + 3 < nROW && y - 3 >= 0) {
-    state |= (b->board[x][y] == b->board[x + 1][y - 1] &&
-              b->board[x][y] == b->board[x + 2][y - 2] &&
-              b->board[x][y] == b->board[x + 3][y - 3]);
-  }
-  return state;
+// O(1) win check using bitboard shift trick
+bool hasWon(uint64_t position) {
+  // Horizontal (shift by 7 = one column)
+  uint64_t m = position & (position >> 7);
+  if (m & (m >> 14))
+    return true;
+  // Diagonal \ (shift by 6)
+  m = position & (position >> 6);
+  if (m & (m >> 12))
+    return true;
+  // Diagonal / (shift by 8)
+  m = position & (position >> 8);
+  if (m & (m >> 16))
+    return true;
+  // Vertical (shift by 1)
+  m = position & (position >> 1);
+  if (m & (m >> 2))
+    return true;
+  return false;
 }
 
-int getWinner(Board *newBoard) {
-  for (int i = 0; i < nROW; i++) {
-    for (int j = 0; j < nCOL; j++) {
-      if (!newBoard->board[i][j])
-        continue;
-      if (checkWinState(i, j, newBoard))
-        return newBoard->board[i][j];
-    }
+int getWinner(Board *b) {
+  // The PREVIOUS player just moved — their pieces are mask ^ position
+  uint64_t lastPlayerBits = b->mask ^ b->position;
+
+  if (hasWon(lastPlayerBits)) {
+    // Last player to move was (turn ^ 1), who is player (turn^1)+1
+    return (b->turn ^ 1) + 1;
+  }
+  // Check current player too (shouldn't normally win before moving, but safe)
+  if (hasWon(b->position)) {
+    return b->turn + 1;
   }
   return 0;
 }

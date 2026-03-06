@@ -7,13 +7,18 @@ import { BackButton } from '../../../components/ui/BackButton';
 const ROWS = 6;
 const COLS = 7;
 
-export function Connect4View({ onBack }: { onBack: () => void }) {
+export function Connect4View({ initialDepth, onBack }: { initialDepth: number; onBack: () => void }) {
 
     const [localTurn, setLocalTurn] = useState<1 | 2>(1);
-
     const [selectedCol, setSelectedCol] = useState(3);
 
-    const { isReady, board, gameStatus, winner, makeMove, computeBotMove, resetGame } = useGameBot();
+    const { isReady, board, gameStatus, winner, makeMove, computeBotMove, resetGame, setDifficulty } = useGameBot();
+
+    // Set difficulty on mount
+    useEffect(() => {
+        setDifficulty(initialDepth);
+        resetGame();
+    }, [initialDepth, setDifficulty, resetGame]);
 
     useEffect(() => {
         if (gameStatus === 'playing') {
@@ -68,8 +73,8 @@ export function Connect4View({ onBack }: { onBack: () => void }) {
     }
 
     return (
-        <div className="flex flex-col h-full items-center justify-center p-4 relative w-full gap-4">
-            <div className="flex w-full max-w-md justify-between items-center relative">
+        <div className="flex flex-col h-full items-center justify-center p-2 relative w-full gap-2">
+            <div className="flex w-full max-w-md justify-between items-center">
                 <BackButton onClick={onBack} />
                 <button
                     onClick={handleReset}
@@ -79,7 +84,7 @@ export function Connect4View({ onBack }: { onBack: () => void }) {
                 </button>
             </div>
 
-            <div className="mb-4 text-gruv-fg font-mono">
+            <div className="mb-2 text-gruv-fg font-mono">
                 {gameStatus === 'playing' ? (
                     <span>TURN: <span className={localTurn === 1 ? "text-red-500" : "text-yellow-500"}>{localTurn === 1 ? "YOU (RED)" : "BOT (YELLOW)"}</span></span>
                 ) : gameStatus === 'won' ? (
@@ -91,14 +96,13 @@ export function Connect4View({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* Board */}
-            <div className="bg-gruv-bg-hard p-2 md:p-4 rounded-lg border-2 border-gruv-fg shadow-lg w-full max-w-md aspect-[7/6]">
+            <div className="bg-gruv-bg-hard p-1 md:p-2 rounded-lg border-2 border-gruv-fg shadow-lg w-full max-w-md aspect-[7/6]">
                 <div className="grid grid-cols-7 gap-1 h-full items-stretch">
                     {Array.from({ length: COLS }).map((_, colIndex) => (
                         <div
                             key={colIndex}
                             className={cn(
                                 "flex flex-col gap-1 cursor-pointer rounded transition-all h-full justify-evenly px-0.5 py-1 md:hover:bg-white/5",
-                                // On desktop (md), we rely on hover. On mobile, we show selection if it matches.
                                 selectedCol === colIndex && localTurn === 1
                                     ? "bg-white/10 ring-1 ring-gruv-fg/50 md:bg-transparent md:ring-0"
                                     : ""

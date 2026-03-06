@@ -3,6 +3,9 @@
 
 #include "board.h"
 #include <stdbool.h>
-bool checkWinState(int x, int y, Board *b);
+#include <stdint.h>
+
+bool hasWon(uint64_t position);
 int getWinner(Board *b);
+
 #endif
