@@ -17,6 +17,13 @@ function App() {
                     <Route path="projects" element={<ProjectsView />} />
                     <Route path="blog" element={<BlogView />} />
                     <Route path="contact" element={<ContactView />} />
+                    <Route path="*" element={
+                        <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+                            <p className="text-6xl font-bold text-gruv-red">404</p>
+                            <p className="text-gruv-fg/60">Page not found</p>
+                            <a href="/" className="text-gruv-yellow hover:underline text-sm">← Back to home</a>
+                        </div>
+                    } />
                 </Route>
             </Routes>
         </BrowserRouter>
