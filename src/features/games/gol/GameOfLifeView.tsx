@@ -219,7 +219,7 @@ export function GameOfLifeView({ onBack }: { onBack: () => void }) {
             >
                 <canvas
                     ref={canvasRef}
-                    className="w-full h-full rounded-md cursor-pointer"
+                    className="w-full h-full rounded-md cursor-pointer touch-none"
                     onMouseDown={(e) => {
                         e.preventDefault()
                         const cell = getCellFromPoint(e.clientX, e.clientY)
