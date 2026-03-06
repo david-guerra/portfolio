@@ -1,17 +1,33 @@
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, Link, matchRoutes } from 'react-router-dom'
 import { cn } from '../../lib/utils'
+
+// Define the valid routes structure for matching
+const routes = [
+    { path: '/' },
+    { path: '/about' },
+    { path: '/arcade' },
+    { path: '/projects' },
+    { path: '/blog' },
+    { path: '/contact' }
+]
 
 export function BreadcrumbHeader() {
     const location = useLocation()
     const pathSegments = location.pathname.split('/').filter(Boolean)
 
+    // Check if the current full path matches any of our defined routes
+    const isKnownRoute = matchRoutes(routes, location) !== null
+
     const breadcrumbs = [
         { name: '~', path: '/' },
         { name: 'david', path: '/' },
-        ...pathSegments.map((segment, index) => ({
-            name: segment,
-            path: `/${pathSegments.slice(0, index + 1).join('/')}`
-        }))
+        ...(isKnownRoute
+            ? pathSegments.map((segment, index) => ({
+                name: segment,
+                path: `/${pathSegments.slice(0, index + 1).join('/')}`
+            }))
+            : [{ name: '404', path: location.pathname }]
+        )
     ]
 
     return (

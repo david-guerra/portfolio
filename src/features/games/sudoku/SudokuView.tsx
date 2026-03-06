@@ -169,9 +169,40 @@ export function SudokuView({ onBack }: { onBack: () => void }) {
                 )}
             </div>
 
-            {/* Footer hint */}
+            {/* Number pad for mobile input */}
+            {!isSolved && selectedCell && (
+                <div className="grid grid-cols-5 gap-1 justify-items-center" style={{ maxWidth: '360px', width: '100%' }}>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                        <button
+                            key={n}
+                            onClick={() => {
+                                if (selectedCell && !initialCells[selectedCell.r]?.[selectedCell.c]) {
+                                    setCell(selectedCell.r, selectedCell.c, n);
+                                }
+                            }}
+                            disabled={initialCells[selectedCell.r]?.[selectedCell.c]}
+                            className="w-full h-9 text-sm font-bold rounded-lg border border-bento bg-gruv-bg-soft text-gruv-fg/80 hover:bg-gruv-yellow/20 hover:text-gruv-yellow hover:border-gruv-yellow transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            {n}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => {
+                            if (selectedCell && !initialCells[selectedCell.r]?.[selectedCell.c]) {
+                                setCell(selectedCell.r, selectedCell.c, 0);
+                            }
+                        }}
+                        disabled={initialCells[selectedCell.r]?.[selectedCell.c]}
+                        className="w-full h-9 text-sm font-bold rounded-lg border border-bento bg-gruv-bg-soft text-gruv-red/80 hover:bg-gruv-red/20 hover:border-gruv-red transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+
+            {/* Footer hint — desktop only */}
             {!isSolved && (
-                <div className="mt-2 text-center text-gruv-fg/30 text-xs">
+                <div className="text-center text-gruv-fg/30 text-xs hidden md:block">
                     [1-9] PLACE   [DEL] CLEAR   [←↑↓→] NAVIGATE
                 </div>
             )}
