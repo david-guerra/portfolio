@@ -35,3 +35,17 @@ test('Gruvbox depth and both missing animations are defined', async () => {
   assert.match(intro, /animate-typing-effect/)
   assert.match(layout, /bg-gruv-bg-hard/)
 })
+
+test('interactive tiles sit on a raised surface above their card', async () => {
+  const [tailwind, stack, nav] = await Promise.all([
+    readFile('tailwind.config.js', 'utf8'),
+    readFile('src/features/StackCard.tsx', 'utf8'),
+    readFile('src/features/navigation/ProjectNavCard.tsx', 'utf8'),
+  ])
+
+  assert.match(tailwind, /bg1:\s*'#3c3836'/)
+  assert.match(stack, /bg-gruv-bg1/)
+  assert.doesNotMatch(stack, /bg-gruv-bg[\s/]/)
+  assert.match(nav, /bg-gruv-bg1/)
+  assert.doesNotMatch(nav, /bg-gruv-bg[\s/]/)
+})
