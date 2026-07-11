@@ -12,7 +12,7 @@ export function Connect4View({ initialDepth, onBack }: { initialDepth: number; o
     const [localTurn, setLocalTurn] = useState<1 | 2>(1);
     const [selectedCol, setSelectedCol] = useState(3);
 
-    const { isReady, board, gameStatus, winner, makeMove, computeBotMove, resetGame, setDifficulty } = useGameBot();
+    const { isReady, board, gameStatus, winner, makeMove, computeBotMove, resetGame, setDifficulty, error, retry } = useGameBot();
 
     // Set difficulty on mount
     useEffect(() => {
@@ -84,15 +84,26 @@ export function Connect4View({ initialDepth, onBack }: { initialDepth: number; o
                 </button>
             </div>
 
-            <div className="mb-2 text-gruv-fg font-mono">
-                {gameStatus === 'playing' ? (
+            <div className="mb-2 text-gruv-fg font-mono" aria-live="polite">
+                {error ? (
+                    <div role="alert" className="flex flex-wrap items-center justify-center gap-3 text-sm text-gruv-red">
+                        <span>BOT_INIT_FAILED</span>
+                        <button
+                            type="button"
+                            onClick={retry}
+                            className="rounded border border-gruv-red px-2 py-1 text-xs hover:bg-gruv-red hover:text-gruv-bg-hard transition-colors"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                ) : gameStatus === 'playing' ? (
                     <span>TURN: <span className={localTurn === 1 ? "text-red-500" : "text-yellow-500"}>{localTurn === 1 ? "YOU (RED)" : "BOT (YELLOW)"}</span></span>
                 ) : gameStatus === 'won' ? (
                     <span className="text-xl font-bold text-gruv-yellow">{winner === 1 ? "YOU WON!" : "BOT WINS!"}</span>
                 ) : (
                     <span>DRAW!</span>
                 )}
-                {!isReady && <span className="ml-4 text-xs text-gruv-fg/50">(Loading Bot...)</span>}
+                {!isReady && !error && <span className="ml-4 text-xs text-gruv-fg/50">(Loading Bot...)</span>}
             </div>
 
             {/* Board */}

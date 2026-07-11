@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { BentoLayout } from './layouts/BentoLayout'
 import { AboutView } from './features/content/AboutView'
 import { ArcadeView } from './features/content/ArcadeView'
@@ -21,7 +21,9 @@ function App() {
                         <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
                             <p className="text-6xl font-bold text-gruv-red">404</p>
                             <p className="text-gruv-fg/60">Page not found</p>
-                            <a href="/" className="text-gruv-yellow hover:underline text-sm">← Back to home</a>
+                            <Link to="/" className="text-gruv-yellow hover:underline text-sm">
+                                ← Back to home
+                            </Link>
                         </div>
                     } />
                 </Route>
@@ -31,4 +33,3 @@ function App() {
 }
 
 export default App
-
