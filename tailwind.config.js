@@ -11,6 +11,7 @@ export default {
                     'bg-hard': '#1d2021',
                     bg: '#282828',
                     'bg-soft': '#32302f',
+                    bg1: '#3c3836',
                     fg: '#ebdbb2',
                     red: '#fb4934',
                     green: '#b8bb26',

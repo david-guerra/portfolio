@@ -2,7 +2,7 @@ import { Github, Linkedin, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 const SocialItem = ({ icon: Icon, href, to, label }: { icon: any, href?: string, to?: string, label: string }) => {
-    const classes = "flex items-center w-full p-3 bg-gruv-bg rounded-lg hover:bg-gruv-bg/80 hover:text-gruv-yellow transition-colors group/item gap-3"
+    const classes = "flex items-center w-full p-3 bg-gruv-bg1 rounded-lg hover:bg-gruv-bg1/70 hover:text-gruv-yellow transition-colors group/item gap-3"
     const content = (
         <>
             <Icon className="w-5 h-5 text-gruv-blue group-hover/item:text-gruv-yellow transition-colors shrink-0" />

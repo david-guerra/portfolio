@@ -24,7 +24,7 @@ export function ProjectNavCard() {
                         to={item.path}
                         className={cn(
                             "flex items-center space-x-3 p-2 rounded-lg transition-all duration-200 group",
-                            isActive ? "bg-gruv-bg shadow-sm" : "hover:bg-gruv-bg-soft/50"
+                            isActive ? "bg-gruv-bg1 shadow-sm" : "hover:bg-gruv-bg1/40"
                         )}
                     >
                         <Icon className={cn(
