@@ -9,8 +9,12 @@ export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL
     const [winner, setWinner] = useState<number>(0);
     const [lastBotMove, setLastBotMove] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [workerGeneration, setWorkerGeneration] = useState(0);
 
     useEffect(() => {
+        setIsReady(false);
+        setError(null);
+
         // Instantiate the worker as 'classic'
         const worker = new Worker(new URL('../workers/bot.worker.ts', import.meta.url), {
             type: 'classic'
@@ -32,10 +36,16 @@ export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL
                     setLastBotMove(msg.payload);
                     break;
                 case 'ERROR':
+                    setIsReady(false);
                     setError(msg.payload);
                     console.error('Bot Worker Error:', msg.payload);
                     break;
             }
+        };
+
+        worker.onerror = (event) => {
+            setIsReady(false);
+            setError(event.message || 'The Connect 4 engine failed to start.');
         };
 
         worker.postMessage({ type: 'INIT', payload: { wasmUrl: scriptPath } } as BotMessage);
@@ -43,7 +53,7 @@ export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL
         return () => {
             worker.terminate();
         };
-    }, [scriptPath]);
+    }, [scriptPath, workerGeneration]);
 
     const makeMove = useCallback((col: number) => {
         if (workerRef.current && isReady) {
@@ -70,5 +80,10 @@ export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL
         }
     }, [isReady]);
 
-    return { isReady, board, gameStatus, winner, makeMove, computeBotMove, lastBotMove, resetGame, setDifficulty, error };
+    const retry = useCallback(() => {
+        setError(null);
+        setWorkerGeneration((generation) => generation + 1);
+    }, []);
+
+    return { isReady, board, gameStatus, winner, makeMove, computeBotMove, lastBotMove, resetGame, setDifficulty, error, retry };
 }
