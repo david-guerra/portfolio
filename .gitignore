@@ -123,3 +123,11 @@ dist/
 
 # Isolated agent worktrees
 /.worktrees/
+
+# Generated TypeScript config output
+/vite.config.js
+/vite.config.d.ts
+
+# Native C test executables
+/test_life
+/c_connect/test_connect
