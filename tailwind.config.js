@@ -8,8 +8,9 @@ export default {
         extend: {
             colors: {
                 gruv: {
+                    'bg-hard': '#1d2021',
                     bg: '#282828',
-                    'bg-soft': '#282828',
+                    'bg-soft': '#32302f',
                     fg: '#ebdbb2',
                     red: '#fb4934',
                     green: '#b8bb26',
@@ -19,6 +20,23 @@ export default {
                     aqua: '#8ec07c',
                     orange: '#fe8019',
                 }
+            },
+            keyframes: {
+                typing: {
+                    from: { width: '0' },
+                    to: { width: '12ch' },
+                },
+                caret: {
+                    '50%': { borderColor: 'transparent' },
+                },
+                fadeIn: {
+                    from: { opacity: '0', transform: 'translateY(0.25rem)' },
+                    to: { opacity: '1', transform: 'translateY(0)' },
+                },
+            },
+            animation: {
+                'typing-effect': 'typing 1.2s steps(12, end) 0.2s both, caret 0.75s step-end infinite',
+                'fade-in': 'fadeIn 0.25s ease-out both',
             },
             fontFamily: {
                 mono: ['"JetBrains Mono"', 'monospace'],
