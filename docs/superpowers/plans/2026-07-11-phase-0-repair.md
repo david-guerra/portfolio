@@ -545,13 +545,20 @@ export default [
     plugins: {
       '@typescript-eslint': tsPlugin,
       'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  },
+  {
+    files: ['src/**/*.tsx'],
+    plugins: {
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
     },
   },
 ]
@@ -567,7 +574,7 @@ npm run lint
 npm run build
 ```
 
-Expected: seven tests PASS; lint exits 0; build exits 0. Warnings from `react-refresh/only-export-components` are acceptable only if they identify a worker type export; application TSX files should be clean.
+Expected: seven tests PASS; lint exits 0 with no warnings; build exits 0.
 
 - [ ] **Step 6: Commit repository hygiene**
 
