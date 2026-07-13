@@ -8,7 +8,7 @@ const NAV_ITEMS: ReadonlyArray<readonly [NavSection, string]> = [
 ]
 
 interface SiteNavProps {
-    active: NavSection
+    active: NavSection | null
     theme: Theme
     onNavigate: (section: NavSection) => void
     onToggleTheme: () => void

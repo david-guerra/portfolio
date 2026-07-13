@@ -13,7 +13,7 @@ function readStoredTheme(): Theme {
 
 export default function App() {
     const [theme, setTheme] = useState<Theme>(readStoredTheme)
-    const [active, setActive] = useState<NavSection>('about')
+    const [active, setActive] = useState<NavSection | null>(null)
     const scrollerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {

@@ -4,31 +4,31 @@ import { activeSection, sectionTargetIndex } from '../src/lib/sections.ts'
 
 const VIEWPORT = 800
 
-test('hero and about panes both light the About nav item', () => {
-    assert.equal(activeSection(0, VIEWPORT), 'about')
-    assert.equal(activeSection(VIEWPORT, VIEWPORT), 'about')
+test('hero pane lights no nav item', () => {
+    assert.equal(activeSection(0, VIEWPORT), null)
 })
 
-test('third pane lights Projects, fourth lights Arcade', () => {
+test('each section pane lights its own nav item', () => {
+    assert.equal(activeSection(VIEWPORT, VIEWPORT), 'about')
     assert.equal(activeSection(VIEWPORT * 2, VIEWPORT), 'projects')
     assert.equal(activeSection(VIEWPORT * 3, VIEWPORT), 'arcade')
 })
 
 test('mid-scroll snaps to the nearest pane', () => {
-    assert.equal(activeSection(VIEWPORT * 1.4, VIEWPORT), 'about')
-    assert.equal(activeSection(VIEWPORT * 1.6, VIEWPORT), 'projects')
+    assert.equal(activeSection(VIEWPORT * 0.4, VIEWPORT), null)
+    assert.equal(activeSection(VIEWPORT * 0.6, VIEWPORT), 'about')
 })
 
 test('overscroll past the last pane stays on Arcade', () => {
     assert.equal(activeSection(VIEWPORT * 9, VIEWPORT), 'arcade')
 })
 
-test('degenerate viewport height falls back to About', () => {
-    assert.equal(activeSection(0, 0), 'about')
+test('degenerate viewport height falls back to the hero state', () => {
+    assert.equal(activeSection(0, 0), null)
 })
 
-test('nav targets: About goes to the hero pane, others to their own', () => {
-    assert.equal(sectionTargetIndex('about'), 0)
+test('nav targets: every section scrolls to its own pane', () => {
+    assert.equal(sectionTargetIndex('about'), 1)
     assert.equal(sectionTargetIndex('projects'), 2)
     assert.equal(sectionTargetIndex('arcade'), 3)
 })
