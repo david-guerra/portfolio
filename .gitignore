@@ -131,3 +131,19 @@ dist/
 # Native C test executables
 /test_life
 /c_connect/test_connect
+
+# Local working material — agent instructions, design references, research
+# notes, and tooling. Deliberately kept off GitHub: only files the project
+# itself needs are committed. Design/research context lives on the issues.
+/.design-sync/
+/.ds-sync/
+/ds-bundle/
+/AGENTS.md
+/CLAUDE.md
+/CONTEXT.md
+/artifacts/
+/docs/adr/
+/docs/agents/
+/docs/design/
+/docs/research/
+/myReference/
