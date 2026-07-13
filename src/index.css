@@ -1,1 +1,100 @@
+/* Self-hosted fonts (no Google Fonts CDN). Mono is the default face everywhere;
+   the sans appears only in About display statements and long-form body copy. */
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/ibm-plex-mono/700.css";
+@import "@fontsource-variable/atkinson-hyperlegible-next";
+
 @import "tailwindcss";
+
+/* Design tokens — pinned on wayfinder ticket #5 (type + token sample sheet).
+   Dark is canonical (brand guide); light is sampled from myReference/herolight.png. */
+:root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --border: #2a2a2e;
+    --text: #f3e9d2;
+    --text-body: #d8d4c8;
+    --text-secondary: #8f8b7f;
+    --muted: #7a7a78;
+    --orange: #e8734a;
+    --olive: #c3d94a;
+    --lavender: #a48ef0;
+    --teal: #5cc9c4;
+}
+
+[data-theme="light"] {
+    --bg: #f9f5ef;
+    --surface: #f1ece1;
+    --border: #e0d9c9;
+    --text: #1a1a1c;
+    --text-body: #33322e;
+    --text-secondary: #6b675c;
+    --muted: #8a8577;
+    --orange: #e85a36;
+    --olive: #a8b01f;
+    --lavender: #7c64d4;
+    --teal: #45938e;
+}
+
+@theme {
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+    --font-sans: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", sans-serif;
+
+    /* type scale (ticket #5): text-display, text-heading, text-title,
+       text-body-sans, text-body-mono, text-label, text-meta */
+    --text-display: clamp(2.75rem, 6.5vw, 4.5rem);
+    --text-display--line-height: 1.05;
+    --text-display--letter-spacing: -0.008em;
+    --text-display--font-weight: 500;
+    --text-heading: 2rem;
+    --text-heading--line-height: 1.2;
+    --text-heading--font-weight: 700;
+    --text-title: 1.1875rem;
+    --text-title--font-weight: 600;
+    --text-body-sans: 1.125rem;
+    --text-body-sans--line-height: 1.65;
+    --text-body-mono: 0.9375rem;
+    --text-body-mono--line-height: 1.7;
+    --text-label: 0.8125rem;
+    --text-label--letter-spacing: 0.12em;
+    --text-meta: 0.8125rem;
+
+    /* radii: 0 hairline rules · 2 pixel dots · 3 inner chips · 4 cards (max) */
+    --radius-dot: 2px;
+    --radius-chip: 3px;
+    --radius-card: 4px;
+
+    /* the mobile-strategy boundary: full desktop layout at ≥900px */
+    --breakpoint-wide: 900px;
+}
+
+/* Theme-reactive color tokens (classes: bg-bg, bg-surface, border-border,
+   text-ink, text-body, text-dim, text-muted, and the four accents). */
+@theme inline {
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-border: var(--border);
+    --color-ink: var(--text);
+    --color-body: var(--text-body);
+    --color-dim: var(--text-secondary);
+    --color-muted: var(--muted);
+    --color-orange: var(--orange);
+    --color-olive: var(--olive);
+    --color-lavender: var(--lavender);
+    --color-teal: var(--teal);
+}
+
+@layer base {
+    html {
+        font-family: var(--font-mono);
+        background: var(--color-bg);
+        color: var(--color-body);
+    }
+
+    ::selection {
+        background: var(--color-orange);
+        color: var(--color-bg);
+    }
+}
