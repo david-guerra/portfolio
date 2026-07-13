@@ -22,6 +22,8 @@
     --olive: #c3d94a;
     --lavender: #a48ef0;
     --teal: #5cc9c4;
+    /* hero canvas only (read via getComputedStyle): resting background squares */
+    --hero-grid: #232327;
 }
 
 [data-theme="light"] {
@@ -36,6 +38,8 @@
     --olive: #a8b01f;
     --lavender: #7c64d4;
     --teal: #45938e;
+    /* reads ≈#e6dcd1 on-page through the 55% rest alpha, per herolight.png */
+    --hero-grid: #d9d2c2;
 }
 
 @theme {

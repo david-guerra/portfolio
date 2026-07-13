@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import Hero from './components/Hero.tsx'
 import SiteNav from './components/SiteNav.tsx'
 import { activeSection, sectionTargetIndex, type NavSection } from './lib/sections.ts'
 import { resolveInitialTheme, toggleTheme, THEME_STORAGE_KEY, type Theme } from './lib/theme.ts'
@@ -16,7 +17,9 @@ export default function App() {
     const [active, setActive] = useState<NavSection | null>(null)
     const scrollerRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => {
+    /* Layout effect: children (the hero canvas) sample CSS tokens in their own
+       effects, which run before a parent passive effect would apply the theme. */
+    useLayoutEffect(() => {
         document.documentElement.dataset.theme = theme
         try {
             localStorage.setItem(THEME_STORAGE_KEY, theme)
@@ -51,27 +54,10 @@ export default function App() {
                 onScroll={handleScroll}
                 className="flex-1 snap-y snap-mandatory scroll-smooth overflow-y-scroll [scrollbar-width:none] motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden"
             >
-                {/* Pane contents land via their own tickets: hero #10, About #11,
-                    Projects #12, Arcade #13. This ticket ships the shell. */}
+                {/* Pane contents land via their own tickets: About #11,
+                    Projects #12, Arcade #13. */}
                 <section id="hero" className="relative h-full snap-start snap-always">
-                    <div className="absolute bottom-20 left-5 wide:bottom-14 wide:left-14">
-                        <h1 className="text-[34px] font-bold tracking-tight text-ink">David Guerra</h1>
-                        <p className="mt-2.5 text-base text-body">
-                            I build things to understand how they work.
-                        </p>
-                        <p className="mt-3.5 flex items-center gap-2.5 text-meta">
-                            <span aria-hidden="true" className="size-[7px] rounded-dot bg-olive" />
-                            <span className="text-teal">IT-Systems Engineering</span>
-                            <span className="text-dim">· Berlin</span>
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => scrollToPane(1)}
-                        className="absolute right-5 bottom-8 cursor-pointer text-meta text-muted transition-colors hover:text-body wide:right-14 wide:bottom-14"
-                    >
-                        scroll <span className="text-[15px]">↓</span>
-                    </button>
+                    <Hero theme={theme} onScrollNext={() => scrollToPane(1)} />
                 </section>
                 <section id="about" className="flex h-full snap-start snap-always flex-col justify-center px-5 wide:px-14">
                     <p className="text-label uppercase text-muted">About</p>
