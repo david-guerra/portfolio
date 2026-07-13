@@ -1,0 +1,25 @@
+# Keep-current policy: Dependabot watches npm and GitHub Actions weekly.
+# CI (lint, typecheck, tests, build) gates every update PR.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Deliberate hold: TS 7 ships no JS API until 7.1, which typed lint
+      # (typescript-eslint) needs. Lift once typescript-eslint supports it —
+      # see docs/research/toolchain-baseline.md (local) / map issue #1.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
