@@ -1,11 +1,11 @@
-# Keep-current policy: Dependabot watches npm and GitHub Actions weekly.
+# Keep-current policy: Dependabot watches npm and GitHub Actions monthly.
 # CI (lint, typecheck, tests, build) gates every update PR.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       minor-and-patch:
         update-types:
@@ -22,4 +22,4 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
