@@ -1,10 +1,12 @@
 # David Guerra — Portfolio
 
-A Gruvbox-inspired portfolio featuring interactive browser games backed by C engines compiled to WebAssembly and kept off the main thread with Web Workers.
+Interactive browser games backed by C engines compiled to WebAssembly, kept off
+the main thread with Web Workers.
 
-[View the live portfolio](https://david-guerra.github.io/portfolio/)
-
-![Portfolio landing page](public/portfolio-preview.png)
+[View the live site](https://david-guerra.github.io/portfolio/) — currently a
+placeholder: the portfolio is being rebuilt on a fresh scaffold
+([map](https://github.com/david-guerra/portfolio/issues/1)). The previous app
+lives untouched in `legacy/` until launch.
 
 ## Architecture
 
@@ -17,11 +19,15 @@ flowchart LR
   Engine --> WASM --> Worker --> UI
 ```
 
-Each game owns a worker and a small message protocol. Connect 4 runs a bitboard negamax search with alpha-beta pruning; Sudoku uses constraint masks and backtracking; Game of Life uses a double-buffered grid.
+Each game owns a worker and a small message protocol. Connect 4 runs a bitboard
+negamax search with alpha-beta pruning; Sudoku uses constraint masks and
+backtracking; Game of Life uses a double-buffered grid.
+
+Toolchain: Vite 8, React 19, TypeScript 6, Tailwind 4, ESLint 10.
 
 ## Run locally
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Node.js 24 (see `.nvmrc`; anything ≥ 22.22 works) and npm.
 
 ```bash
 npm ci
@@ -33,12 +39,17 @@ The Vite app is served under `/portfolio/` to match GitHub Pages.
 ## Quality checks
 
 ```bash
-npm run test:phase0
 npm run lint
+npm run typecheck
+npm test
 npm run build
 ```
 
-The current Connect 4 native test can be rebuilt without writing a binary into the repository:
+`npm test` drives the three real workers against the shipped `.wasm` engines
+under Node's test runner (see `tests/helpers/worker-harness.ts`).
+
+The Connect 4 native test can be rebuilt without writing a binary into the
+repository:
 
 ```bash
 clang c_connect/test_connect.c c_connect/boardcontrol.c c_connect/gamecontrol.c -o /tmp/test_connect && /tmp/test_connect
@@ -56,6 +67,6 @@ emcc c_lifegame/wasm_adapter.c c_lifegame/boardcontrol.c -O3 --no-entry -sWASM=1
 
 ## Deployment
 
-Pushes to `main` are built and deployed by `.github/workflows/deploy.yml`. Add a repository Actions secret named `WEB3FORMS_ACCESS_KEY` before relying on the contact form in production.
-
-JetBrains Mono is redistributed under the SIL Open Font License in `public/fonts/OFL.txt`.
+Pushes to `main` run lint, typecheck, tests, and the build, then deploy to
+GitHub Pages via `.github/workflows/deploy.yml`. Pull requests run the same
+checks without deploying.
