@@ -1,8 +1,5 @@
 /// <reference lib="webworker" />
 
-// Classic worker: loads the Emscripten glue via importScripts at runtime.
-// The wasm module is the compiled Game of Life engine from c_lifegame/.
-
 export type GoLMessage =
     | { type: 'INIT'; payload: { wasmUrl: string } }
     | { type: 'SET_CELL'; payload: { row: number; col: number; val: number } }
@@ -14,26 +11,12 @@ export type GoLResponse =
     | { type: 'BOARD_UPDATE'; payload: number[][] }
     | { type: 'ERROR'; payload: string }
 
-// Must match nROW/nCOL in c_lifegame/board.h
 const ROWS = 18
 const COLS = 18
 
-interface EmscriptenOptions {
-    locateFile?: (path: string, prefix: string) => string
-}
+let wasmModule: any = null
 
-interface GoLModule {
-    _wasm_init(): void
-    _wasm_set_cell(row: number, col: number, val: number): void
-    _wasm_get_cell(row: number, col: number): number
-    _wasm_step(): void
-    _wasm_clear(): void
-}
-
-let wasmModule: GoLModule | null = null
-
-// Provided globally by the importScripts'd Emscripten glue
-declare function createGoLModule(options?: EmscriptenOptions): Promise<GoLModule>
+declare function createGoLModule(options?: any): Promise<any>
 
 function getBoardState(): number[][] {
     const board: number[][] = []
@@ -49,33 +32,32 @@ function getBoardState(): number[][] {
 }
 
 function sendBoard() {
-    self.postMessage({ type: 'BOARD_UPDATE', payload: getBoardState() } satisfies GoLResponse)
+    self.postMessage({ type: 'BOARD_UPDATE', payload: getBoardState() } as GoLResponse)
 }
 
 self.onmessage = async (e: MessageEvent<GoLMessage>) => {
-    const { type } = e.data
+    const { type, payload } = e.data
 
     try {
         switch (type) {
             case 'INIT': {
-                const { wasmUrl } = e.data.payload
-                importScripts(wasmUrl)
-                const wasmDir = wasmUrl.substring(0, wasmUrl.lastIndexOf('/') + 1)
+                importScripts(payload.wasmUrl)
+                const wasmDir = payload.wasmUrl.substring(0, payload.wasmUrl.lastIndexOf('/') + 1)
                 wasmModule = await createGoLModule({
                     locateFile: (path: string, prefix: string) => {
                         if (path.endsWith('.wasm')) return wasmDir + path
                         return prefix + path
-                    },
+                    }
                 })
                 wasmModule._wasm_init()
-                self.postMessage({ type: 'READY' } satisfies GoLResponse)
+                self.postMessage({ type: 'READY' } as GoLResponse)
                 sendBoard()
                 break
             }
 
             case 'SET_CELL': {
                 if (!wasmModule) throw new Error('Wasm not ready')
-                const { row, col, val } = e.data.payload
+                const { row, col, val } = payload
                 wasmModule._wasm_set_cell(row, col, val)
                 sendBoard()
                 break
@@ -98,9 +80,8 @@ self.onmessage = async (e: MessageEvent<GoLMessage>) => {
             default:
                 console.warn('Unknown message type:', type)
         }
-    } catch (err) {
+    } catch (err: any) {
         console.error('GoL Worker Error:', err)
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        self.postMessage({ type: 'ERROR', payload: message } satisfies GoLResponse)
+        self.postMessage({ type: 'ERROR', payload: err.message || 'Unknown error' } as GoLResponse)
     }
 }

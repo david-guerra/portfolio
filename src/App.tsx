@@ -1,35 +1,22 @@
-import { HashRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
-import { BentoLayout } from './layouts/BentoLayout'
-import { AboutView } from './features/content/AboutView'
-import { ArcadeView } from './features/content/ArcadeView'
-import { ProjectsView } from './features/content/ProjectsView'
-import { BlogView } from './features/content/BlogView'
-import { ContactView } from './features/content/ContactView'
-
-function App() {
+export default function App() {
     return (
-        <HashRouter>
-            <Routes>
-                <Route path="/" element={<BentoLayout />}>
-                    <Route index element={<AboutView />} />
-                    <Route path="about" element={<Navigate to="/" replace />} />
-                    <Route path="arcade" element={<ArcadeView />} />
-                    <Route path="projects" element={<ProjectsView />} />
-                    <Route path="blog" element={<BlogView />} />
-                    <Route path="contact" element={<ContactView />} />
-                    <Route path="*" element={
-                        <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                            <p className="text-6xl font-bold text-gruv-red">404</p>
-                            <p className="text-gruv-fg/60">Page not found</p>
-                            <Link to="/" className="text-gruv-yellow hover:underline text-sm">
-                                ← Back to home
-                            </Link>
-                        </div>
-                    } />
-                </Route>
-            </Routes>
-        </HashRouter>
+        <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#0d0d0f] px-6 font-mono text-[#e4e0d6]">
+            <p className="text-xs tracking-[0.3em] text-[#e8734a] uppercase">
+                Under construction
+            </p>
+            <h1 className="text-center text-2xl tracking-widest text-[#f3e9d2] uppercase sm:text-4xl">
+                David Guerra
+            </h1>
+            <p className="max-w-md text-center text-sm leading-relaxed text-[#e4e0d6]/70">
+                A new portfolio is being built here — pixel-canvas hero, projects,
+                and a playable C/WebAssembly arcade.
+            </p>
+            <a
+                href="https://github.com/david-guerra"
+                className="border border-[#e4e0d6]/30 px-4 py-2 text-xs tracking-[0.2em] uppercase transition-colors hover:border-[#e8734a] hover:text-[#e8734a]"
+            >
+                GitHub ↗
+            </a>
+        </main>
     )
 }
-
-export default App

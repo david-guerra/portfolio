@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { BotMessage, BotResponse, GameStatus } from '../workers/bot.worker';
+import type { BotMessage, BotResponse } from '../workers/bot.worker';
 
 export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL + 'wasm/game_bot.js', window.location.origin).href) {
     const workerRef = useRef<Worker | null>(null);
     const [isReady, setIsReady] = useState(false);
     const [board, setBoard] = useState<number[][]>([]);
-    const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
+    const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'draw'>('playing');
     const [winner, setWinner] = useState<number>(0);
     const [lastBotMove, setLastBotMove] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [workerGeneration, setWorkerGeneration] = useState(0);
 
     useEffect(() => {
+        setIsReady(false);
+        setError(null);
+
         // Instantiate the worker as 'classic'
         const worker = new Worker(new URL('../workers/bot.worker.ts', import.meta.url), {
             type: 'classic'
@@ -26,7 +29,7 @@ export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL
                     break;
                 case 'GAME_UPDATE':
                     setBoard(msg.payload.board);
-                    setGameStatus(msg.payload.status);
+                    setGameStatus(msg.payload.status as any);
                     setWinner(msg.payload.winner);
                     break;
                 case 'MOVE_COMPUTED':
@@ -78,8 +81,6 @@ export function useGameBot(scriptPath: string = new URL(import.meta.env.BASE_URL
     }, [isReady]);
 
     const retry = useCallback(() => {
-        // Reset readiness before the effect boots a replacement worker
-        setIsReady(false);
         setError(null);
         setWorkerGeneration((generation) => generation + 1);
     }, []);

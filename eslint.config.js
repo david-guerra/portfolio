@@ -1,39 +1,46 @@
-import tsParser from '@typescript-eslint/parser'
-import tsPlugin from '@typescript-eslint/eslint-plugin'
+import js from '@eslint/js'
+import { defineConfig, globalIgnores } from 'eslint/config'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import globals from 'globals'
+import tseslint from 'typescript-eslint'
 
-export default [
-  {
-    ignores: ['dist/**', 'node_modules/**', 'public/wasm/**'],
-  },
-  {
-    files: ['src/**/*.{ts,tsx}', 'vite.config.ts'],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: { jsx: true },
-      },
+export default defineConfig([
+    globalIgnores([
+        'dist',
+        'legacy',
+        'node_modules',
+        // non-app directories: design references, imported prototypes, tooling
+        '.design-sync',
+        'artifacts',
+        'docs',
+        'ds-bundle',
+        'myReference',
+        'public',
+    ]),
+    {
+        files: ['**/*.{ts,tsx}'],
+        extends: [
+            js.configs.recommended,
+            tseslint.configs.recommended,
+            reactHooks.configs.flat['recommended-latest'],
+            reactRefresh.configs.vite,
+        ],
+        languageOptions: {
+            ecmaVersion: 2023,
+            globals: globals.browser,
+        },
     },
-    plugins: {
-      '@typescript-eslint': tsPlugin,
-      'react-hooks': reactHooks,
+    {
+        files: ['src/workers/**/*.ts'],
+        languageOptions: {
+            globals: globals.worker,
+        },
     },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
-      'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    {
+        files: ['tests/**/*.ts'],
+        languageOptions: {
+            globals: globals.nodeBuiltin,
+        },
     },
-  },
-  {
-    files: ['src/**/*.tsx'],
-    plugins: {
-      'react-refresh': reactRefresh,
-    },
-    rules: {
-      'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
-    },
-  },
-]
+])
