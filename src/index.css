@@ -22,6 +22,11 @@
     --olive: #c3d94a;
     --lavender: #a48ef0;
     --teal: #5cc9c4;
+    --about-muted-text: var(--muted);
+    --about-orange-text: var(--orange);
+    --about-olive-text: var(--olive);
+    --about-lavender-text: var(--lavender);
+    --about-teal-text: var(--teal);
     /* hero canvas only (read via getComputedStyle): the three fabric gray levels */
     --hero-fabric-0: #17171a;
     --hero-fabric-1: #232327;
@@ -40,6 +45,11 @@
     --olive: #a8b01f;
     --lavender: #7c64d4;
     --teal: #45938e;
+    --about-muted-text: #6f6a5e;
+    --about-orange-text: #a83c22;
+    --about-olive-text: #646b00;
+    --about-lavender-text: #684fbe;
+    --about-teal-text: #28716d;
     /* draw colors chosen so the fabric reads ≈#efe8e0 on-page per herolight.png */
     --hero-fabric-0: #e9e1d4;
     --hero-fabric-1: #e2d8c7;
@@ -92,6 +102,11 @@
     --color-olive: var(--olive);
     --color-lavender: var(--lavender);
     --color-teal: var(--teal);
+    --color-about-muted: var(--about-muted-text);
+    --color-about-orange: var(--about-orange-text);
+    --color-about-olive: var(--about-olive-text);
+    --color-about-lavender: var(--about-lavender-text);
+    --color-about-teal: var(--about-teal-text);
 }
 
 @layer base {

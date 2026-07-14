@@ -16,7 +16,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
             <div className="mx-auto flex min-h-full w-full max-w-[1364px] flex-col">
                 <div className="grid wide:grid-cols-12 wide:gap-x-10">
                     <div className="wide:col-span-9">
-                        <p className="text-label tracking-[0.12em] text-muted uppercase">About</p>
+                        <p className="text-label tracking-[0.12em] text-about-muted uppercase">About</p>
                         <h2
                             id="about-heading"
                             className="mt-8 max-w-[960px] font-sans text-display text-ink"
@@ -31,13 +31,13 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                             href="https://hpi.de/en/studies/it-systems-engineering-bsc/"
                             target="_blank"
                             rel="noreferrer"
-                            className={`text-lavender underline decoration-lavender/70 underline-offset-4 transition-colors hover:text-olive ${FOCUS_RING}`}
+                            className={`text-about-lavender underline decoration-about-lavender/70 underline-offset-4 transition-colors hover:text-about-olive ${FOCUS_RING}`}
                         >
                             Hasso Plattner Institute
                         </a>{' '}
                         and work at Siemens, building productivity tools for project management
-                        with <span className="text-orange">SPFx</span> and{' '}
-                        <span className="text-teal">Microsoft Power Platform</span>.
+                        with <span className="text-about-orange">SPFx</span> and{' '}
+                        <span className="text-about-teal">Microsoft Power Platform</span>.
                     </p>
 
                     <div className="mt-8 wide:col-span-6 wide:col-start-7 wide:mt-24">
@@ -45,7 +45,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                             I keep drifting toward systems and low-level details, while my work
                             shows me how much product context changes an engineering problem. I’m
                             now exploring where AI fits into internal workflows, with{' '}
-                            <span className="text-olive">AI product engineering</span> as the
+                            <span className="text-about-olive">AI product engineering</span> as the
                             direction I want to grow toward.
                         </p>
 
@@ -53,7 +53,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                             <button
                                 type="button"
                                 onClick={onSayHello}
-                                className={`cursor-pointer border-b border-orange pb-1 text-orange transition-colors hover:text-ink ${FOCUS_RING}`}
+                                className={`cursor-pointer border-b border-about-orange pb-1 text-about-orange transition-colors hover:text-ink ${FOCUS_RING}`}
                             >
                                 Say hello →
                             </button>
@@ -61,7 +61,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                                 href="https://github.com/david-guerra"
                                 target="_blank"
                                 rel="noreferrer"
-                                className={`border-b border-olive pb-1 text-olive transition-colors hover:text-ink ${FOCUS_RING}`}
+                                className={`border-b border-about-olive pb-1 text-about-olive transition-colors hover:text-ink ${FOCUS_RING}`}
                             >
                                 GitHub ↗
                             </a>
@@ -69,7 +69,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                                 href="https://linkedin.com/in/david-guerrasal"
                                 target="_blank"
                                 rel="noreferrer"
-                                className={`border-b border-olive pb-1 text-olive transition-colors hover:text-ink ${FOCUS_RING}`}
+                                className={`border-b border-about-olive pb-1 text-about-olive transition-colors hover:text-ink ${FOCUS_RING}`}
                             >
                                 LinkedIn ↗
                             </a>
