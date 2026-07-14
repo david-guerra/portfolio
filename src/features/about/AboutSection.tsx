@@ -11,7 +11,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
         <section
             id="about"
             aria-labelledby="about-heading"
-            className="h-full snap-start snap-always overflow-y-auto px-5 py-8 wide:px-14 wide:py-20"
+            className="h-full snap-start snap-always overflow-y-auto px-5 py-6 wide:px-14 wide:py-20"
         >
             <div className="mx-auto flex min-h-full w-full max-w-[1364px] flex-col">
                 <div className="grid wide:grid-cols-12 wide:gap-x-10">
@@ -19,13 +19,13 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                         <p className="text-label tracking-[0.12em] text-about-muted uppercase">About</p>
                         <h2
                             id="about-heading"
-                            className="mt-8 max-w-[960px] font-sans text-display text-ink"
+                            className="mt-5 max-w-[960px] font-sans text-display text-ink wide:mt-8"
                         >
                             Somewhere between systems and products.
                         </h2>
                     </div>
 
-                    <p className="mt-10 max-w-[640px] font-sans text-body-sans text-body wide:col-span-5 wide:col-start-1 wide:mt-14">
+                    <p className="mt-6 max-w-[640px] font-sans text-body-sans text-body wide:col-span-5 wide:col-start-1 wide:mt-14">
                         I study IT-Systems Engineering at the{' '}
                         <a
                             href="https://hpi.de/en/studies/it-systems-engineering-bsc/"
@@ -40,7 +40,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                         <span className="text-about-teal">Microsoft Power Platform</span>.
                     </p>
 
-                    <div className="mt-8 wide:col-span-6 wide:col-start-7 wide:mt-24">
+                    <div className="mt-6 wide:col-span-6 wide:col-start-7 wide:mt-24">
                         <p className="max-w-[640px] font-sans text-body-sans text-body">
                             I keep drifting toward systems and low-level details, while my work
                             shows me how much product context changes an engineering problem. I’m
@@ -49,7 +49,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                             direction I want to grow toward.
                         </p>
 
-                        <div className="mt-7 flex flex-wrap items-center gap-x-7 gap-y-4 text-sm">
+                        <div className="hidden text-sm wide:mt-7 wide:block">
                             <button
                                 type="button"
                                 onClick={onSayHello}
@@ -57,29 +57,13 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                             >
                                 Say hello →
                             </button>
-                            <a
-                                href="https://github.com/david-guerra"
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`border-b border-about-olive pb-1 text-about-olive transition-colors hover:text-ink ${FOCUS_RING}`}
-                            >
-                                GitHub ↗
-                            </a>
-                            <a
-                                href="https://linkedin.com/in/david-guerrasal"
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`border-b border-about-olive pb-1 text-about-olive transition-colors hover:text-ink ${FOCUS_RING}`}
-                            >
-                                LinkedIn ↗
-                            </a>
                         </div>
                     </div>
                 </div>
 
-                <footer className="mt-12 wide:mt-auto wide:pt-12">
+                <footer className="mt-8 wide:mt-auto wide:pt-12">
                     <p className="text-sm tracking-wide text-body">Peruvian · Based in Berlin</p>
-                    <div className="mt-8 flex justify-end border-t border-border pt-6">
+                    <div className="mt-5 flex justify-end border-t border-border pt-4 wide:mt-8 wide:pt-6">
                         <button
                             type="button"
                             onClick={onScrollNext}
