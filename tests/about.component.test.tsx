@@ -67,6 +67,28 @@ describe('About section', () => {
         expect(actionRow).not.toBeNull()
         expect(actionRow?.classList.contains('hidden')).toBe(true)
         expect(actionRow?.classList.contains('wide:block')).toBe(true)
+
+        const nextProjects = about.getByRole('button', { name: 'Next · Projects ↓' })
+        const nextRow = nextProjects.parentElement
+        expect(nextRow).not.toBeNull()
+        expect(nextRow?.classList.contains('hidden')).toBe(true)
+        expect(nextRow?.classList.contains('wide:flex')).toBe(true)
+    })
+
+    test('uses natural scrolling on mobile and restores snap panes on desktop', () => {
+        const { section } = renderAbout()
+        const scroller = section.parentElement
+        expect(scroller).not.toBeNull()
+
+        expect(scroller?.classList.contains('snap-y')).toBe(false)
+        expect(scroller?.classList.contains('snap-mandatory')).toBe(false)
+        expect(scroller?.classList.contains('wide:snap-y')).toBe(true)
+        expect(scroller?.classList.contains('wide:snap-mandatory')).toBe(true)
+
+        expect(section.classList.contains('min-h-full')).toBe(true)
+        expect(section.classList.contains('overflow-y-auto')).toBe(false)
+        expect(section.classList.contains('wide:h-full')).toBe(true)
+        expect(section.classList.contains('wide:overflow-y-auto')).toBe(true)
     })
 
     test('delegates its local actions through callbacks', () => {
@@ -92,8 +114,11 @@ describe('About section', () => {
         const scrollTo = vi.fn()
         Object.defineProperty(element, 'clientHeight', { configurable: true, value: 800 })
         Object.defineProperty(element, 'scrollTo', { configurable: true, value: scrollTo })
+        const projects = element.querySelector('#projects')
+        expect(projects).not.toBeNull()
+        Object.defineProperty(projects, 'offsetTop', { configurable: true, value: 1975 })
         fireEvent.click(about.getByRole('button', { name: 'Next · Projects ↓' }))
 
-        expect(scrollTo).toHaveBeenCalledWith({ top: 1600 })
+        expect(scrollTo).toHaveBeenCalledWith({ top: 1975 })
     })
 })
