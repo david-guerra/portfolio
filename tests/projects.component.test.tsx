@@ -161,6 +161,19 @@ describe('Projects section', () => {
         let dialog = getByRole('dialog')
         let gallery = within(dialog)
 
+        const galleryFrame = gallery.getByTestId('project-gallery-frame')
+        const galleryImage = gallery.getByRole('img', {
+            name: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
+        })
+
+        expect(galleryFrame.classList).toContain('shrink-0')
+        expect(galleryFrame.classList).not.toContain('flex-1')
+        expect(galleryImage.classList).toContain('h-auto')
+        expect(galleryImage.classList).toContain('w-full')
+        expect(galleryImage.classList).not.toContain('h-full')
+        expect(galleryImage.classList).not.toContain('max-h-[48dvh]')
+        expect(galleryImage.classList).not.toContain('wide:max-h-[50dvh]')
+
         expect(gallery.getByTestId('project-gallery-layout').classList).toContain('min-w-0')
         expect(gallery.getByTestId('project-gallery-media').classList).toContain('min-w-0')
         expect(gallery.getByTestId('project-gallery-copy').classList).toContain('min-w-0')
