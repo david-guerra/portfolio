@@ -56,17 +56,17 @@ describe('About section', () => {
         ).toBeNull()
     })
 
-    test('uses the established safe external profile links', () => {
+    test('removes repeated profile links and keeps the contact action desktop-only', () => {
         const { about } = renderAbout()
-        const github = about.getByRole('link', { name: 'GitHub ↗' })
-        const linkedin = about.getByRole('link', { name: 'LinkedIn ↗' })
 
-        expect(github.getAttribute('href')).toBe('https://github.com/david-guerra')
-        expect(linkedin.getAttribute('href')).toBe('https://linkedin.com/in/david-guerrasal')
-        for (const link of [github, linkedin]) {
-            expect(link.getAttribute('target')).toBe('_blank')
-            expect(link.getAttribute('rel')).toBe('noreferrer')
-        }
+        expect(about.queryByRole('link', { name: 'GitHub ↗' })).toBeNull()
+        expect(about.queryByRole('link', { name: 'LinkedIn ↗' })).toBeNull()
+
+        const sayHello = about.getByRole('button', { name: 'Say hello →' })
+        const actionRow = sayHello.parentElement
+        expect(actionRow).not.toBeNull()
+        expect(actionRow?.classList.contains('hidden')).toBe(true)
+        expect(actionRow?.classList.contains('wide:block')).toBe(true)
     })
 
     test('delegates its local actions through callbacks', () => {
