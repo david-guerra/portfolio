@@ -377,28 +377,71 @@ test('the fabric engine exposes the Hybrid tear operations at a pure test seam',
     }
 })
 
-test('scatter drags name cells, stays inside seven pitches, and prunes weak rim impulses', () => {
+test('scatter activates the center, stays inside seven pitches, and prunes weak rim impulses', () => {
     const layout: FabricLayout = { pitch: 12, cols: 15, rows: 15, clusterSize: 1 }
-    const cells: FabricCell[] = Array.from({ length: layout.cols * layout.rows }, (_, idx) => ({
-        c: idx % layout.cols,
-        r: Math.floor(idx / layout.cols),
-        kind: KIND_GRAY_BASE,
-        alpha: 1,
-        sizeMul: 1,
-    }))
     const center = 7 * layout.cols + 7
     const rim = 7 * layout.cols + 13
-    cells[center].kind = KIND_NAME
     const active = new Map<number, ScatterMotion>()
 
     const activated = applyScatterImpulse(layout, active, 90, 90, 1, 0, 0.55)
 
     assert.equal(activated, active.size)
-    assert.ok(active.has(center), 'the approved name-reacts setting includes name cells')
+    assert.ok(active.has(center), 'the center cell receives the directional impulse')
     assert.ok(Math.abs(active.get(center)!.vx - 176) < 1e-9)
     assert.equal(active.get(center)!.vy, 0)
     assert.ok(!active.has(rim), 'sub-25px/s rim impulses stay asleep')
     assert.ok(!active.has(0), 'cells beyond the seven-pitch radius stay asleep')
+})
+
+test('zero-interval pointer samples produce zero velocity', () => {
+    const pointerVelocity = (
+        heroFabric as unknown as {
+            pointerVelocity?: (
+                deltaX: number,
+                deltaY: number,
+                elapsed: number,
+            ) => { x: number; y: number }
+        }
+    ).pointerVelocity
+
+    assert.deepEqual(pointerVelocity?.(12, -8, 0), { x: 0, y: 0 })
+})
+
+test('scatter never inserts non-finite motion from non-finite pointer velocity', () => {
+    const layout: FabricLayout = { pitch: 12, cols: 15, rows: 15, clusterSize: 1 }
+
+    for (const [velocityX, velocityY] of [
+        [Number.NaN, 1],
+        [1, Number.POSITIVE_INFINITY],
+    ]) {
+        const active = new Map<number, ScatterMotion>()
+        applyScatterImpulse(layout, active, 90, 90, velocityX, velocityY, 0.55)
+
+        assert.ok(
+            [...active.values()].every((motion) =>
+                [motion.ox, motion.oy, motion.vx, motion.vy].every(Number.isFinite),
+            ),
+            `expected finite motion for pointer velocity ${velocityX}, ${velocityY}`,
+        )
+    }
+})
+
+test('scatter caps the complete pointer velocity vector to magnitude three', () => {
+    const layout: FabricLayout = { pitch: 12, cols: 15, rows: 15, clusterSize: 1 }
+    const oversized = new Map<number, ScatterMotion>()
+    const capped = new Map<number, ScatterMotion>()
+
+    applyScatterImpulse(layout, oversized, 90, 90, 30, 40, 0.55)
+    applyScatterImpulse(layout, capped, 90, 90, 1.8, 2.4, 0.55)
+
+    assert.deepEqual([...oversized.keys()], [...capped.keys()])
+    for (const [idx, motion] of oversized) {
+        const expected = capped.get(idx)!
+        assert.ok(Math.abs(motion.ox - expected.ox) < 1e-9)
+        assert.ok(Math.abs(motion.oy - expected.oy) < 1e-9)
+        assert.ok(Math.abs(motion.vx - expected.vx) < 1e-9)
+        assert.ok(Math.abs(motion.vy - expected.vy) < 1e-9)
+    }
 })
 
 test('flip trails recolor gray cells, dim lit cells, skip the name, and expire in range', () => {
@@ -429,6 +472,21 @@ test('flip trails recolor gray cells, dim lit cells, skip the name, and expire i
     }
 })
 
+test('flip trails skip fully faded cells and respect partial fade alpha', () => {
+    const layout: FabricLayout = { pitch: 10, cols: 2, rows: 1, clusterSize: 1 }
+    const cells: FabricCell[] = [
+        { c: 0, r: 0, kind: KIND_GRAY_BASE, alpha: 0, sizeMul: 1 },
+        { c: 1, r: 0, kind: KIND_GRAY_BASE, alpha: 0.25, sizeMul: 1 },
+    ]
+    const active = new Map<number, FlipMotion>()
+
+    applyFlipTrail(cells, layout, active, 5, 5, 1000, 2, 1, () => 0)
+
+    assert.ok(!active.has(0), 'fully faded cells stay inactive')
+    assert.equal(active.get(1)?.kind, 0)
+    assert.ok(active.get(1)!.alpha <= cells[1].alpha)
+})
+
 test('scatter springs advance, retire below the visual threshold, and flips expire on time', () => {
     const scatter = new Map<number, ScatterMotion>([
         [1, { ox: 10, oy: 0, vx: 0, vy: 0 }],
@@ -448,6 +506,16 @@ test('scatter springs advance, retire below the visual threshold, and flips expi
     ])
     assert.equal(expireFlips(flips, 1000), 1)
     assert.deepEqual([...flips.keys()], [3])
+})
+
+test('scatter advancement retires invalid pre-existing motion', () => {
+    const scatter = new Map<number, ScatterMotion>([
+        [1, { ox: Number.NaN, oy: 0, vx: 0, vy: 0 }],
+        [2, { ox: 0, oy: 0, vx: Number.POSITIVE_INFINITY, vy: 0 }],
+    ])
+
+    assert.equal(advanceScatter(scatter, 1 / 60), 0)
+    assert.equal(scatter.size, 0)
 })
 
 test('the reduced-motion poster reshuffles only after a completed stationary tap', () => {

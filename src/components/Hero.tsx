@@ -9,6 +9,7 @@ import {
     expireFlips,
     isPosterTap,
     layoutFabric,
+    pointerVelocity,
     type FabricCell,
     type FabricLayout,
     type FlipMotion,
@@ -325,8 +326,11 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
         const now = performance.now()
         const previous = lastPointerRef.current
         const elapsed = previous ? now - previous.time : 0
-        const velocityX = previous && elapsed < 120 ? (point.x - previous.x) / elapsed : 0
-        const velocityY = previous && elapsed < 120 ? (point.y - previous.y) / elapsed : 0
+        const velocity = pointerVelocity(
+            previous ? point.x - previous.x : 0,
+            previous ? point.y - previous.y : 0,
+            elapsed,
+        )
         lastPointerRef.current = { ...point, time: now }
 
         applyScatterImpulse(
@@ -334,8 +338,8 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
             scatterRef.current,
             point.x,
             point.y,
-            velocityX,
-            velocityY,
+            velocity.x,
+            velocity.y,
             0.55,
         )
         if (now - lastFlipRef.current >= FLIP_MOVE_THROTTLE_MS) {
