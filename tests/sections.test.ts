@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { activeSection, sectionTargetIndex } from '../src/lib/sections.ts'
+import { activeSection } from '../src/lib/sections.ts'
 
 const VIEWPORT = 800
 
@@ -27,8 +27,10 @@ test('degenerate viewport height falls back to the hero state', () => {
     assert.equal(activeSection(0, 0), null)
 })
 
-test('nav targets: every section scrolls to its own pane', () => {
-    assert.equal(sectionTargetIndex('about'), 1)
-    assert.equal(sectionTargetIndex('projects'), 2)
-    assert.equal(sectionTargetIndex('arcade'), 3)
+test('rendered section starts support a taller mobile About section', () => {
+    const offsets = { about: 800, projects: 2400, arcade: 3200 }
+
+    assert.equal(activeSection(1700, VIEWPORT, offsets), 'about')
+    assert.equal(activeSection(2000, VIEWPORT, offsets), 'projects')
+    assert.equal(activeSection(2800, VIEWPORT, offsets), 'arcade')
 })
