@@ -132,11 +132,18 @@ describe('Projects section', () => {
         expect(next.classList).toContain('border-lavender')
         const previousTitle = within(previous).getByText('Fest')
         const nextTitle = within(next).getByText('CleanVoice')
+        const previousDirection = within(previous).getByText('← Previous')
+        const nextDirection = within(next).getByText('Next →')
 
         expect(previousTitle).toBeTruthy()
-        expect(within(previous).getByText('← Previous')).toBeTruthy()
+        expect(previousDirection).toBeTruthy()
         expect(nextTitle).toBeTruthy()
-        expect(within(next).getByText('Next →')).toBeTruthy()
+        expect(nextDirection).toBeTruthy()
+
+        expect(previousDirection.classList).toContain('text-[#e8734a]')
+        expect(previousDirection.classList).not.toContain('text-orange')
+        expect(nextDirection.classList).toContain('text-[#a48ef0]')
+        expect(nextDirection.classList).not.toContain('text-lavender')
 
         for (const title of [previousTitle, nextTitle]) {
             const labelChip = title.parentElement
