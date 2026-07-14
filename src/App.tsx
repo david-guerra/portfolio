@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import Hero from './components/Hero.tsx'
 import SiteNav from './components/SiteNav.tsx'
+import AboutSection from './features/about/AboutSection.tsx'
 import { activeSection, sectionTargetIndex, type NavSection } from './lib/sections.ts'
 import { resolveInitialTheme, toggleTheme, THEME_STORAGE_KEY, type Theme } from './lib/theme.ts'
 
@@ -54,15 +55,11 @@ export default function App() {
                 onScroll={handleScroll}
                 className="flex-1 snap-y snap-mandatory scroll-smooth overflow-y-scroll [scrollbar-width:none] motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden"
             >
-                {/* Pane contents land via their own tickets: About #11,
-                    Projects #12, Arcade #13. */}
+                {/* Remaining pane contents land via their own tickets: Projects #12, Arcade #13. */}
                 <section id="hero" className="relative h-full snap-start snap-always">
                     <Hero theme={theme} onScrollNext={() => scrollToPane(1)} />
                 </section>
-                <section id="about" className="flex h-full snap-start snap-always flex-col justify-center px-5 wide:px-14">
-                    <p className="text-label uppercase text-muted">About</p>
-                    <p className="mt-4 text-body-mono text-dim">Under construction.</p>
-                </section>
+                <AboutSection onScrollNext={() => scrollToPane(2)} />
                 <section id="projects" className="flex h-full snap-start snap-always flex-col justify-center px-5 wide:px-14">
                     <p className="text-label uppercase text-muted">Projects</p>
                     <p className="mt-4 text-body-mono text-dim">Under construction.</p>
