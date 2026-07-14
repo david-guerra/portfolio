@@ -1,41 +1,45 @@
 import { useCallback, useEffect, useRef } from 'react'
 import {
-    ParticleField,
-    buildHeroMask,
-    exciteTarget,
-    layoutBackground,
-    layoutLetters,
-} from '../lib/heroField.ts'
+    KIND_NAME,
+    buildFabric,
+    layoutFabric,
+    rippleIntensity,
+    type FabricCell,
+    type FabricLayout,
+} from '../lib/heroFabric.ts'
 import type { Theme } from '../lib/theme.ts'
 
-const HERO_MASK = buildHeroMask()
-const LETTER_RATE = 0.16
-const BG_RATE = 0.14
-
-interface HeroPalette {
-    ink: string
-    grid: string
-    accents: string[]
-}
+const MOVE_THROTTLE_MS = 70
+const FADE_PAD_PX = 16
 
 /* The canvas paints with the same tokens the page uses, sampled from CSS so the
-   two can never drift. Requires data-theme to be applied before effects run. */
-function readPalette(): HeroPalette {
+   two can never drift. Indexed by cell kind: accents 0–3, fabric grays 4–6, name 7.
+   Requires data-theme to be applied before effects run. */
+function readPalette(): string[] {
     const style = getComputedStyle(document.documentElement)
     const token = (name: string) => style.getPropertyValue(name).trim()
-    return {
-        ink: token('--text'),
-        grid: token('--hero-grid'),
-        accents: [token('--orange'), token('--lavender'), token('--teal'), token('--olive')],
-    }
+    return [
+        token('--orange'),
+        token('--lavender'),
+        token('--teal'),
+        token('--olive'),
+        token('--hero-fabric-0'),
+        token('--hero-fabric-1'),
+        token('--hero-fabric-2'),
+        token('--text'),
+    ]
+}
+
+interface Ripple {
+    c: number
+    r: number
+    t0: number
 }
 
 interface Scene {
     ctx: CanvasRenderingContext2D
-    width: number
-    height: number
-    letters: { field: ParticleField; pitch: number; originX: number; originY: number }
-    bg: { field: ParticleField; pitch: number; cols: number; rows: number }
+    layout: FabricLayout
+    cells: FabricCell[]
 }
 
 export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNext: () => void }) {
@@ -43,68 +47,75 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const textRef = useRef<HTMLDivElement>(null)
     const sceneRef = useRef<Scene | null>(null)
-    const paletteRef = useRef<HeroPalette | null>(null)
-    const mouseRef = useRef({ x: -9999, y: -9999, active: false })
+    const paletteRef = useRef<string[] | null>(null)
+    const ripplesRef = useRef<Ripple[]>([])
+    const seedRef = useRef(0) // seeded lazily in setup(); 0 = not yet woven
     const rafRef = useRef(0)
     const reducedRef = useRef(false)
+    const lastMoveRef = useRef(0)
 
-    const draw = useCallback(() => {
+    const paint = useCallback((now?: number) => {
         const scene = sceneRef.current
         const palette = paletteRef.current
         if (!scene || !palette) return
-        const { ctx, width, height, letters, bg } = scene
-        const mouse = mouseRef.current
-        ctx.clearRect(0, 0, width, height)
+        const { ctx, layout, cells } = scene
+        const { pitch } = layout
+        ctx.clearRect(0, 0, layout.cols * pitch, layout.rows * pitch)
 
-        // background particle field — dimmed uniform squares at rest
-        const bgRestSize = bg.pitch * 0.22
-        const bgRadius = Math.max(120, bg.pitch * 9)
-        for (let r = 0; r < bg.rows; r++) {
-            for (let c = 0; c < bg.cols; c++) {
-                const idx = r * bg.cols + c
-                const cx = c * bg.pitch + bg.pitch / 2
-                const cy = r * bg.pitch + bg.pitch / 2
-                const dist = Math.hypot(cx - mouse.x, cy - mouse.y)
-                const e = bg.field.step(idx, exciteTarget(dist, bgRadius, mouse.active), BG_RATE)
-                const size = bgRestSize + (bg.field.sizeMul[idx] * bg.pitch - bgRestSize) * e
-                const px = cx + bg.field.offX[idx] * e
-                const py = cy + bg.field.offY[idx] * e
-                ctx.globalAlpha = 0.55 + 0.45 * e
-                ctx.fillStyle = e < 0.15 ? palette.grid : bg.field.colors[idx]
-                ctx.fillRect(px - size / 2, py - size / 2, size, size)
+        const baseSize = pitch - 2.4
+        for (const cell of cells) {
+            if (cell.alpha <= 0) continue
+            const size = baseSize * cell.sizeMul
+            ctx.globalAlpha = cell.alpha
+            ctx.fillStyle = palette[cell.kind]
+            ctx.fillRect(
+                cell.c * pitch + (pitch - size) / 2,
+                cell.r * pitch + (pitch - size) / 2,
+                size,
+                size,
+            )
+        }
+
+        // ripple rings wash over the fabric; the letters stay inert
+        if (now !== undefined) {
+            for (const ripple of ripplesRef.current) {
+                const t = (now - ripple.t0) / 1000
+                for (const cell of cells) {
+                    if (cell.kind === KIND_NAME) continue
+                    const intensity = rippleIntensity(
+                        Math.hypot(cell.c - ripple.c, cell.r - ripple.r),
+                        t,
+                    )
+                    if (intensity <= 0) continue
+                    ctx.globalAlpha = intensity
+                    ctx.fillStyle = palette[(cell.c + cell.r) % 4]
+                    ctx.fillRect(cell.c * pitch + 1.2, cell.r * pitch + 1.2, baseSize, baseSize)
+                }
             }
         }
         ctx.globalAlpha = 1
-
-        // letters — always bright, react by shifting color/size/position
-        const { matrix, cols, rows } = HERO_MASK
-        const restSize = letters.pitch * 0.56
-        const radius = Math.max(120, letters.pitch * 6.5)
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                if (!matrix[r][c]) continue
-                const idx = r * cols + c
-                const cx = letters.originX + c * letters.pitch + letters.pitch / 2
-                const cy = letters.originY + r * letters.pitch + letters.pitch / 2
-                const dist = Math.hypot(cx - mouse.x, cy - mouse.y)
-                const e = letters.field.step(idx, exciteTarget(dist, radius, mouse.active), LETTER_RATE)
-                const size = restSize + (letters.field.sizeMul[idx] * letters.pitch - restSize) * e
-                if (size <= 0.5) continue
-                const px = cx + letters.field.offX[idx] * e
-                const py = cy + letters.field.offY[idx] * e
-                ctx.fillStyle = e < 0.15 ? palette.ink : letters.field.colors[idx]
-                ctx.fillRect(px - size / 2, py - size / 2, size, size)
-            }
-        }
-
-        if (mouse.active) {
-            ctx.strokeStyle = palette.ink + '33'
-            ctx.lineWidth = 1
-            ctx.beginPath()
-            ctx.arc(mouse.x, mouse.y, 34, 0, Math.PI * 2)
-            ctx.stroke()
-        }
     }, [])
+
+    const startLoop = useCallback(() => {
+        if (rafRef.current) return
+        const step = (now: number) => {
+            ripplesRef.current = ripplesRef.current.filter((rp) => now - rp.t0 < 1050)
+            paint(now)
+            rafRef.current = ripplesRef.current.length ? requestAnimationFrame(step) : 0
+        }
+        rafRef.current = requestAnimationFrame(step)
+    }, [paint])
+
+    const spawnRipple = useCallback(
+        (px: number, py: number) => {
+            const scene = sceneRef.current
+            if (!scene) return
+            const { pitch } = scene.layout
+            ripplesRef.current.push({ c: px / pitch, r: py / pitch, t0: performance.now() })
+            startLoop()
+        },
+        [startLoop],
+    )
 
     const setup = useCallback(() => {
         const wrap = wrapRef.current
@@ -121,55 +132,36 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
         if (!ctx) return
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-        const palette = paletteRef.current ?? readPalette()
-        paletteRef.current = palette
-        const textHeight = textRef.current?.getBoundingClientRect().height ?? 100
-        const letterLayout = layoutLetters({
-            width: rect.width,
-            height: rect.height,
-            textHeight,
-            cols: HERO_MASK.cols,
-            rows: HERO_MASK.rows,
-        })
-        const bgLayout = layoutBackground(rect.width, rect.height)
+        paletteRef.current ??= readPalette()
+        if (!seedRef.current) seedRef.current = (Math.random() * 1e9) | 0 || 1
+        const layout = layoutFabric(rect.width, rect.height)
 
-        const prev = sceneRef.current
-        const letterField =
-            prev && prev.letters.pitch === letterLayout.pitch
-                ? prev.letters.field
-                : new ParticleField(HERO_MASK.cols * HERO_MASK.rows, letterLayout.pitch, palette.accents)
-        const bgCount = bgLayout.cols * bgLayout.rows
-        const bgField =
-            prev && prev.bg.pitch === bgLayout.pitch && prev.bg.field.excite.length === bgCount
-                ? prev.bg.field
-                : new ParticleField(bgCount, bgLayout.pitch, palette.accents)
-
-        sceneRef.current = {
-            ctx,
-            width: rect.width,
-            height: rect.height,
-            letters: { field: letterField, ...letterLayout },
-            bg: { field: bgField, ...bgLayout },
+        // the fabric clears out around the name block so the text sits clean
+        let fadeRect
+        const text = textRef.current?.getBoundingClientRect()
+        if (text) {
+            fadeRect = {
+                c0: Math.floor((text.left - rect.left - FADE_PAD_PX) / layout.pitch),
+                r0: Math.floor((text.top - rect.top - FADE_PAD_PX) / layout.pitch),
+                c1: Math.ceil((text.right - rect.left + FADE_PAD_PX) / layout.pitch),
+                r1: layout.rows,
+            }
         }
-        if (reducedRef.current) draw()
-    }, [draw])
+
+        sceneRef.current = { ctx, layout, cells: buildFabric(layout, seedRef.current, fadeRect) }
+        paint()
+    }, [paint])
 
     useEffect(() => {
         const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-
-        const loop = () => {
-            draw()
-            rafRef.current = requestAnimationFrame(loop)
-        }
         const applyMotionPreference = () => {
             reducedRef.current = reducedQuery.matches
-            cancelAnimationFrame(rafRef.current)
             if (reducedQuery.matches) {
-                // #6: render once and stay still — no loop, no pointer ripples
-                mouseRef.current.active = false
-                draw()
-            } else {
-                rafRef.current = requestAnimationFrame(loop)
+                // #6: still poster — drop live ripples, repaint at rest
+                cancelAnimationFrame(rafRef.current)
+                rafRef.current = 0
+                ripplesRef.current = []
+                paint()
             }
         }
 
@@ -183,39 +175,46 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
             reducedQuery.removeEventListener('change', applyMotionPreference)
             observer.disconnect()
         }
-    }, [setup, draw])
+    }, [setup, paint])
 
     useEffect(() => {
         paletteRef.current = readPalette()
-        // fields keep their traits; new accents apply as cells reroll. Repaint
-        // the static frame ourselves when no loop is running.
-        if (reducedRef.current) draw()
+        // same weave, next theme's colors; the running tick repaints on its own
+        if (!rafRef.current) paint()
         void theme
-    }, [theme, draw])
+    }, [theme, paint])
 
-    const trackPointer = (e: React.PointerEvent) => {
+    const pointAt = (e: React.PointerEvent): { x: number; y: number } | null => {
         const wrap = wrapRef.current
-        if (!wrap || reducedRef.current) return
+        if (!wrap) return null
         const rect = wrap.getBoundingClientRect()
-        mouseRef.current.x = e.clientX - rect.left
-        mouseRef.current.y = e.clientY - rect.top
-        mouseRef.current.active = true
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top }
     }
-    const releasePointer = () => {
-        mouseRef.current.active = false
+
+    const handleMove = (e: React.PointerEvent) => {
+        if (reducedRef.current) return
+        const now = performance.now()
+        if (now - lastMoveRef.current < MOVE_THROTTLE_MS) return
+        lastMoveRef.current = now
+        const p = pointAt(e)
+        if (p) spawnRipple(p.x, p.y)
+    }
+
+    const handleDown = (e: React.PointerEvent) => {
+        if (reducedRef.current) {
+            // still poster: a tap re-seeds the weave as an instant cut
+            seedRef.current = (Math.random() * 1e9) | 0
+            setup()
+            return
+        }
+        handleMove(e)
     }
 
     return (
         <div
             ref={wrapRef}
-            onPointerMove={trackPointer}
-            onPointerDown={trackPointer}
-            onPointerLeave={releasePointer}
-            onPointerUp={(e) => {
-                // touch has no hover: the ripple ends when the finger lifts
-                if (e.pointerType !== 'mouse') releasePointer()
-            }}
-            onPointerCancel={releasePointer}
+            onPointerMove={handleMove}
+            onPointerDown={handleDown}
             className="absolute inset-0 touch-pan-y overflow-hidden"
         >
             <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 block" />
