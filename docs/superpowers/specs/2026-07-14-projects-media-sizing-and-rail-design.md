@@ -13,11 +13,11 @@ Approved in the visual companion on 2026-07-14. This is a focused revision of th
 
 ### Gallery media frame
 
-- The bordered frame follows the Arcade captures' intrinsic ratio: `1586 / 992` (approximately `1.599:1`).
+- The bordered frame follows each selected image's natural aspect ratio. Current gallery assets are either `1586 / 992` or `1672 / 941`.
 - The frame is content-sized and does not flex-grow vertically.
-- The image fills that frame with `object-contain`, preserving the complete screenshot without cropping.
+- The image renders at full frame width with automatic height, preserving the complete screenshot without cropping or letterboxing.
 - Thumbnail tabs begin immediately below the frame. No bordered empty area may remain below the painted image.
-- This same aspect-driven rule applies on desktop and mobile. Existing dialog width and overflow constraints remain responsible for fitting the viewport.
+- This natural-ratio rule applies on desktop and mobile. The frame may shift by roughly 20–40px when the selected image ratio changes; existing dialog width and overflow constraints remain responsible for fitting the viewport.
 - `object-cover` is rejected because it would crop meaningful UI from portfolio screenshots and would not solve an oversized parent frame by itself.
 
 ### Desktop project rail
@@ -40,7 +40,7 @@ Approved in the visual companion on 2026-07-14. This is a focused revision of th
 ## Component boundaries
 
 - `ProjectsSection` owns neighbor width, visual treatment, persistent labels, and existing carousel interactions.
-- `ProjectGalleryDialog` owns the aspect-driven gallery frame.
+- `ProjectGalleryDialog` owns the natural-ratio gallery frame.
 - `projects.ts` remains the content and asset source. No model changes are required.
 
 ## Accessibility and interaction
@@ -53,7 +53,7 @@ Approved in the visual companion on 2026-07-14. This is a focused revision of th
 ## Verification
 
 - Add failing component tests before implementation for the aspect-driven, non-growing gallery frame and the wider, labeled neighbor controls.
-- Verify gallery geometry at 1220×1198: unpainted bordered height must be negligible rather than the current 44.9%.
+- Verify every available gallery ratio at 1220×1198: unpainted bordered height must be negligible rather than the current 44.9%.
 - Verify desktop composition at 1586×992 and 1220×1198, including neighbor readability before hover and the selected frame's dominance.
 - Verify gallery and unchanged swipe deck at 393×780.
 - Check dark and light themes, keyboard focus, reduced-motion classes, image loading, runtime warnings, and horizontal overflow.

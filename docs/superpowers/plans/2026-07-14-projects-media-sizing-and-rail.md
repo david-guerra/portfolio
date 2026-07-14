@@ -4,13 +4,13 @@
 
 **Goal:** Remove empty bordered space from the project gallery and make the desktop carousel's neighboring projects visibly identifiable and clickable.
 
-**Architecture:** Keep the existing component boundaries. `ProjectGalleryDialog` receives an aspect-driven media frame; `ProjectsSection` receives wider, persistently labeled neighbor buttons with the approved continuous-rail treatment. The project model, mobile deck, and interaction state remain unchanged.
+**Architecture:** Keep the existing component boundaries. `ProjectGalleryDialog` receives a natural-ratio media frame; `ProjectsSection` receives wider, persistently labeled neighbor buttons with the approved continuous-rail treatment. The project model, mobile deck, and interaction state remain unchanged.
 
 **Tech Stack:** React 19, TypeScript, Tailwind CSS 4, Vitest, Testing Library, Vite, native `<dialog>`.
 
 ## Global Constraints
 
-- Gallery aspect ratio is exactly `1586 / 992`; the full screenshot remains visible with `object-contain` and no cropping.
+- Each gallery frame follows its selected image's natural ratio (`1586 / 992` or `1672 / 941` in the current assets); the full screenshot remains visible with no cropping or letterboxing.
 - Desktop neighbors use `clamp(190px, 18vw, 270px)` width.
 - Resting neighbor treatment is 64% brightness, 82% saturation, and 0.45px blur.
 - Outer-edge shade is 28% and clears by the midpoint so the inner neighbor edge stays visible.
@@ -21,7 +21,7 @@
 
 ---
 
-### Task 1: Make the gallery frame follow the capture aspect ratio
+### Task 1: Make the gallery frame follow each capture's natural aspect ratio
 
 **Files:**
 - Modify: `tests/projects.component.test.tsx:151-196`
@@ -29,7 +29,7 @@
 
 **Interfaces:**
 - Consumes: existing `ProjectGalleryDialogProps` and `Project.gallery` image data.
-- Produces: a `data-testid="project-gallery-frame"` frame whose border exactly wraps a `1586 / 992` image area.
+- Produces: a `data-testid="project-gallery-frame"` frame whose border exactly wraps the selected image's natural height.
 
 - [ ] **Step 1: Write the failing gallery sizing test**
 
@@ -41,10 +41,11 @@ const galleryImage = gallery.getByRole('img', {
     name: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
 })
 
-expect(galleryFrame.classList).toContain('aspect-[1586/992]')
 expect(galleryFrame.classList).toContain('shrink-0')
 expect(galleryFrame.classList).not.toContain('flex-1')
-expect(galleryImage.classList).toContain('h-full')
+expect(galleryImage.classList).toContain('h-auto')
+expect(galleryImage.classList).toContain('w-full')
+expect(galleryImage.classList).not.toContain('h-full')
 expect(galleryImage.classList).not.toContain('max-h-[48dvh]')
 expect(galleryImage.classList).not.toContain('wide:max-h-[50dvh]')
 ```
@@ -66,12 +67,12 @@ Replace the growing media frame and capped image in `ProjectGalleryDialog.tsx` w
 ```tsx
 <div
     data-testid="project-gallery-frame"
-    className={`aspect-[1586/992] shrink-0 overflow-hidden border bg-bg ${ACCENT_BORDER[project.accent]}`}
+    className={`shrink-0 overflow-hidden border bg-bg ${ACCENT_BORDER[project.accent]}`}
 >
     <img
         src={image.image}
         alt={image.alt}
-        className="h-full w-full object-contain"
+        className="block h-auto w-full object-contain"
     />
 </div>
 ```
@@ -250,12 +251,12 @@ Open `http://127.0.0.1:5173/portfolio/` in the in-app browser.
 
 - [ ] **Step 2: Verify the tall gallery repro is green**
 
-At 1220×1198, navigate to Projects and open the Arcade gallery. Measure the bordered frame and painted `object-contain` image using the image's intrinsic `1586 / 992` ratio.
+At 1220×1198, navigate to Projects and open the Arcade gallery. Measure the bordered frame and image, then select Connect Four and repeat so both current intrinsic ratios are covered.
 
 Expected:
 
 ```text
-frame aspect ratio: within 1% of 1.59879
+frame aspect ratio: within 1% of the selected image's natural ratio
 unpainted bordered height: <= 2%
 horizontal overflow: 0px
 ```
