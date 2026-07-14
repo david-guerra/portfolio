@@ -296,6 +296,30 @@ export interface FabricPoint {
     y: number
 }
 
+export function pointerVelocity(
+    deltaX: number,
+    deltaY: number,
+    elapsed: number,
+): FabricPoint {
+    if (!Number.isFinite(elapsed) || elapsed <= 0 || elapsed >= 120) return { x: 0, y: 0 }
+    const x = deltaX / elapsed
+    const y = deltaY / elapsed
+    return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : { x: 0, y: 0 }
+}
+
+function cappedPointerVelocity(x: number, y: number, maxMagnitude: number): FabricPoint {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return { x: 0, y: 0 }
+    const magnitude = Math.hypot(x, y)
+    if (!Number.isFinite(magnitude)) return { x: 0, y: 0 }
+    if (magnitude <= maxMagnitude) return { x, y }
+    const scale = maxMagnitude / magnitude
+    return { x: x * scale, y: y * scale }
+}
+
+function isFiniteMotion(motion: ScatterMotion): boolean {
+    return [motion.ox, motion.oy, motion.vx, motion.vy].every(Number.isFinite)
+}
+
 export function isPosterTap(
     start: FabricPoint,
     end: FabricPoint,
@@ -315,17 +339,24 @@ export function applyScatterImpulse(
     multiplier: number,
 ): number {
     const { pitch, cols, rows } = layout
+    if (![pitch, x, y, multiplier].every(Number.isFinite) || pitch <= 0) return active.size
     const radius = pitch * 7
     const r0 = Math.max(0, Math.floor((y - radius) / pitch))
     const r1 = Math.min(rows - 1, Math.ceil((y + radius) / pitch))
     const c0 = Math.max(0, Math.floor((x - radius) / pitch))
     const c1 = Math.min(cols - 1, Math.ceil((x + radius) / pitch))
-    const speed = Math.min(Math.hypot(pointerVelocityX, pointerVelocityY), 3)
+    const pointerVelocity = cappedPointerVelocity(pointerVelocityX, pointerVelocityY, 3)
+    const speed = Math.hypot(pointerVelocity.x, pointerVelocity.y)
 
     for (let r = r0; r <= r1; r++) {
         for (let c = c0; c <= c1; c++) {
             const idx = r * cols + c
-            const motion = active.get(idx) ?? { ox: 0, oy: 0, vx: 0, vy: 0 }
+            const existing = active.get(idx)
+            if (existing && !isFiniteMotion(existing)) {
+                active.delete(idx)
+                continue
+            }
+            const motion = existing ?? { ox: 0, oy: 0, vx: 0, vy: 0 }
             const dx = c * pitch + pitch / 2 + motion.ox - x
             const dy = r * pitch + pitch / 2 + motion.oy - y
             const distance = Math.hypot(dx, dy)
@@ -336,14 +367,17 @@ export function applyScatterImpulse(
             const impulse = (140 + speed * 820) * falloff * multiplier * (pitch / 12)
             const velocityX =
                 dx * inverseDistance * impulse +
-                pointerVelocityX * 1000 * 0.32 * falloff * multiplier
+                pointerVelocity.x * 1000 * 0.32 * falloff * multiplier
             const velocityY =
                 dy * inverseDistance * impulse +
-                pointerVelocityY * 1000 * 0.32 * falloff * multiplier
+                pointerVelocity.y * 1000 * 0.32 * falloff * multiplier
 
             if (!active.has(idx) && velocityX ** 2 + velocityY ** 2 < 625) continue
-            motion.vx += velocityX
-            motion.vy += velocityY
+            const nextVelocityX = motion.vx + velocityX
+            const nextVelocityY = motion.vy + velocityY
+            if (!Number.isFinite(nextVelocityX) || !Number.isFinite(nextVelocityY)) continue
+            motion.vx = nextVelocityX
+            motion.vy = nextVelocityY
             active.set(idx, motion)
         }
     }
@@ -373,7 +407,7 @@ export function applyFlipTrail(
         for (let c = c0; c <= c1; c++) {
             const idx = r * cols + c
             const cell = cells[idx]
-            if (cell.kind === KIND_NAME) continue
+            if (cell.kind === KIND_NAME || !Number.isFinite(cell.alpha) || cell.alpha <= 0) continue
             const distance = Math.hypot(c + 0.5 - pointerC, r + 0.5 - pointerR)
             if (distance > radiusCells) continue
             if (random() >= probability * (1 - distance / radiusCells)) continue
@@ -388,7 +422,7 @@ export function applyFlipTrail(
             const kind: FlipMotion['kind'] = lit
                 ? -1
                 : (((random() * 4) | 0) as 0 | 1 | 2 | 3)
-            const alpha = lit ? 0 : 0.72 + random() * 0.28
+            const alpha = lit ? 0 : (0.72 + random() * 0.28) * cell.alpha
             active.set(idx, { kind, alpha, until: now + 320 + random() * 1050 })
         }
     }
@@ -398,6 +432,10 @@ export function applyFlipTrail(
 export function advanceScatter(active: Map<number, ScatterMotion>, dt: number): number {
     const friction = Math.exp(-6.5 * dt)
     for (const [idx, motion] of active) {
+        if (!isFiniteMotion(motion)) {
+            active.delete(idx)
+            continue
+        }
         motion.vx += -motion.ox * 52 * dt
         motion.vy += -motion.oy * 52 * dt
         motion.vx *= friction
