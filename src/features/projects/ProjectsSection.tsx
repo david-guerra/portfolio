@@ -102,7 +102,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                 if (event.key === 'ArrowLeft') selectRelative(-1, true)
                 if (event.key === 'ArrowRight') selectRelative(1, true)
             }}
-            className="min-h-full px-5 py-8 outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-orange wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
+            className="min-h-full px-5 py-8 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-orange wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
         >
             <div className="mx-auto flex min-h-full w-full max-w-[1474px] flex-col wide:h-full wide:min-h-0">
                 <div className="flex flex-col justify-between gap-4 wide:flex-row wide:items-start">

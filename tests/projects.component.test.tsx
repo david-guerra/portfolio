@@ -288,6 +288,7 @@ describe('Projects section', () => {
         expect(inner?.classList.contains('wide:min-h-0')).toBe(true)
         expect(mediaRail?.classList.contains('min-h-0')).toBe(true)
         expect(section.classList).toContain('focus-visible:outline-2')
+        expect(section.classList).toContain('focus-visible:outline-solid')
         expect(section.classList).toContain('focus-visible:outline-offset-[-2px]')
         expect(section.classList).toContain('focus-visible:outline-orange')
     })
