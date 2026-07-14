@@ -117,6 +117,35 @@ describe('Projects section', () => {
         expect(onScrollNext).toHaveBeenCalledOnce()
     })
 
+    test('keeps desktop neighbor projects wide, dark, and visibly labeled', () => {
+        const { getByRole } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const previous = getByRole('button', { name: 'Show previous project: Fest' })
+        const next = getByRole('button', { name: 'Show next project: CleanVoice' })
+        const previousImage = previous.querySelector('img')
+        const nextImage = next.querySelector('img')
+
+        expect(previous.classList).toContain('w-[clamp(190px,18vw,270px)]')
+        expect(next.classList).toContain('w-[clamp(190px,18vw,270px)]')
+        expect(previous.classList).toContain('border-orange')
+        expect(next.classList).toContain('border-lavender')
+        expect(within(previous).getByText('Fest')).toBeTruthy()
+        expect(within(previous).getByText('← Previous')).toBeTruthy()
+        expect(within(next).getByText('CleanVoice')).toBeTruthy()
+        expect(within(next).getByText('Next →')).toBeTruthy()
+
+        for (const image of [previousImage, nextImage]) {
+            expect(image).not.toBeNull()
+            expect(image?.classList).toContain('brightness-[0.64]')
+            expect(image?.classList).toContain('saturate-[0.82]')
+            expect(image?.classList).toContain('blur-[0.45px]')
+            expect(image?.classList).toContain('group-hover:brightness-[0.82]')
+            expect(image?.classList).toContain('group-focus-visible:brightness-[0.82]')
+            expect(image?.classList).toContain('motion-reduce:transition-none')
+        }
+    })
+
     test('provides the approved mobile edge-peek deck with synced counter and dots', () => {
         const { getByRole, getByTestId, getByText } = render(
             <ProjectsSection onScrollNext={() => undefined} />,
