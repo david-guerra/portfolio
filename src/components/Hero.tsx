@@ -1,15 +1,23 @@
 import { useCallback, useEffect, useRef } from 'react'
 import {
     KIND_NAME,
+    advanceScatter,
+    applyFlipTrail,
+    applyScatterImpulse,
     buildFabric,
+    canvasDpr,
+    expireFlips,
+    isPosterTap,
     layoutFabric,
-    rippleIntensity,
     type FabricCell,
     type FabricLayout,
+    type FlipMotion,
+    type ScatterMotion,
 } from '../lib/heroFabric.ts'
 import type { Theme } from '../lib/theme.ts'
 
-const MOVE_THROTTLE_MS = 70
+const FLIP_MOVE_THROTTLE_MS = 36
+const FRAME_INTERVAL_MS = 15.5
 const FADE_PAD_PX = 16
 
 /* The canvas paints with the same tokens the page uses, sampled from CSS so the
@@ -30,16 +38,118 @@ function readPalette(): string[] {
     ]
 }
 
-interface Ripple {
-    c: number
-    r: number
-    t0: number
-}
-
 interface Scene {
     ctx: CanvasRenderingContext2D
+    baseCanvas: HTMLCanvasElement
+    baseCtx: CanvasRenderingContext2D
+    width: number
+    height: number
+    dpr: number
     layout: FabricLayout
     cells: FabricCell[]
+}
+
+interface PointerSample {
+    x: number
+    y: number
+    time: number
+}
+
+interface PosterTapStart {
+    pointerId: number
+    x: number
+    y: number
+}
+
+function cellSize(cell: FabricCell, pitch: number): number {
+    return Math.max(pitch - 2.4, pitch * 0.7) * cell.sizeMul
+}
+
+function drawRestCell(
+    ctx: CanvasRenderingContext2D,
+    cell: FabricCell,
+    pitch: number,
+    palette: readonly string[],
+): void {
+    if (cell.alpha <= 0) return
+    const size = cellSize(cell, pitch)
+    ctx.globalAlpha = cell.alpha
+    ctx.fillStyle = palette[cell.kind]
+    ctx.fillRect(
+        cell.c * pitch + (pitch - size) / 2,
+        cell.r * pitch + (pitch - size) / 2,
+        size,
+        size,
+    )
+}
+
+function renderBaseLayer(scene: Scene, palette: readonly string[]): void {
+    const { baseCanvas, baseCtx, width, height, dpr, layout, cells } = scene
+    baseCanvas.width = Math.max(1, Math.round(width * dpr))
+    baseCanvas.height = Math.max(1, Math.round(height * dpr))
+    baseCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    baseCtx.clearRect(0, 0, width, height)
+    for (const cell of cells) drawRestCell(baseCtx, cell, layout.pitch, palette)
+    baseCtx.globalAlpha = 1
+}
+
+function eraseRestCell(ctx: CanvasRenderingContext2D, cell: FabricCell, pitch: number): void {
+    const size = cellSize(cell, pitch)
+    ctx.clearRect(
+        cell.c * pitch + (pitch - size) / 2 - 0.7,
+        cell.r * pitch + (pitch - size) / 2 - 0.7,
+        size + 1.4,
+        size + 1.4,
+    )
+}
+
+function drawActiveCell(
+    ctx: CanvasRenderingContext2D,
+    cell: FabricCell,
+    pitch: number,
+    palette: readonly string[],
+    now: number,
+    scatter?: ScatterMotion,
+    flip?: FlipMotion,
+): void {
+    const size = cellSize(cell, pitch)
+    const offsetX = scatter?.ox ?? 0
+    const offsetY = scatter?.oy ?? 0
+    const x = cell.c * pitch + (pitch - size) / 2 + offsetX
+    const y = cell.r * pitch + (pitch - size) / 2 + offsetY
+    let alpha = cell.alpha
+
+    if (flip) {
+        const remaining = flip.until - now
+        const amount = remaining <= 0 ? 0 : Math.min(1, remaining / 240)
+        if (flip.kind === -1) {
+            alpha *= 1 - 0.92 * amount
+        } else {
+            if (alpha > 0) {
+                ctx.globalAlpha = alpha * (1 - amount)
+                ctx.fillStyle = palette[cell.kind]
+                ctx.fillRect(x, y, size, size)
+            }
+            ctx.globalAlpha = flip.alpha * amount
+            ctx.fillStyle = palette[flip.kind]
+            ctx.fillRect(x, y, size, size)
+            return
+        }
+    }
+
+    if (alpha <= 0) return
+    ctx.globalAlpha = alpha
+    ctx.fillStyle = palette[cell.kind]
+    ctx.fillRect(x, y, size, size)
+
+    if (cell.kind !== KIND_NAME && scatter) {
+        const displacement = Math.hypot(scatter.ox, scatter.oy) / pitch
+        if (displacement > 0.45) {
+            ctx.globalAlpha = Math.min(0.85, (displacement - 0.45) * 0.55)
+            ctx.fillStyle = palette[(cell.c + cell.r) % 4]
+            ctx.fillRect(x, y, size, size)
+        }
+    }
 }
 
 export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNext: () => void }) {
@@ -48,74 +158,81 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
     const textRef = useRef<HTMLDivElement>(null)
     const sceneRef = useRef<Scene | null>(null)
     const paletteRef = useRef<string[] | null>(null)
-    const ripplesRef = useRef<Ripple[]>([])
-    const seedRef = useRef(0) // seeded lazily in setup(); 0 = not yet woven
+    const scatterRef = useRef(new Map<number, ScatterMotion>())
+    const flipsRef = useRef(new Map<number, FlipMotion>())
+    const seedRef = useRef(0)
     const rafRef = useRef(0)
     const reducedRef = useRef(false)
-    const lastMoveRef = useRef(0)
+    const lastTickRef = useRef(0)
+    const lastPaintRef = useRef(0)
+    const lastFlipRef = useRef(0)
+    const lastPointerRef = useRef<PointerSample | null>(null)
+    const posterTapRef = useRef<PosterTapStart | null>(null)
 
-    const paint = useCallback((now?: number) => {
+    const hasMotion = useCallback(
+        () => scatterRef.current.size > 0 || flipsRef.current.size > 0,
+        [],
+    )
+
+    const paint = useCallback((now = performance.now()) => {
         const scene = sceneRef.current
         const palette = paletteRef.current
         if (!scene || !palette) return
-        const { ctx, layout, cells } = scene
+        const { ctx, baseCanvas, width, height, layout, cells } = scene
         const { pitch } = layout
-        ctx.clearRect(0, 0, layout.cols * pitch, layout.rows * pitch)
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(baseCanvas, 0, 0, width, height)
 
-        const baseSize = pitch - 2.4
-        for (const cell of cells) {
-            if (cell.alpha <= 0) continue
-            const size = baseSize * cell.sizeMul
-            ctx.globalAlpha = cell.alpha
-            ctx.fillStyle = palette[cell.kind]
-            ctx.fillRect(
-                cell.c * pitch + (pitch - size) / 2,
-                cell.r * pitch + (pitch - size) / 2,
-                size,
-                size,
+        const active = new Set([...scatterRef.current.keys(), ...flipsRef.current.keys()])
+        for (const idx of active) eraseRestCell(ctx, cells[idx], pitch)
+        for (const idx of active) {
+            drawActiveCell(
+                ctx,
+                cells[idx],
+                pitch,
+                palette,
+                now,
+                scatterRef.current.get(idx),
+                flipsRef.current.get(idx),
             )
-        }
-
-        // ripple rings wash over the fabric; the letters stay inert
-        if (now !== undefined) {
-            for (const ripple of ripplesRef.current) {
-                const t = (now - ripple.t0) / 1000
-                for (const cell of cells) {
-                    if (cell.kind === KIND_NAME) continue
-                    const intensity = rippleIntensity(
-                        Math.hypot(cell.c - ripple.c, cell.r - ripple.r),
-                        t,
-                    )
-                    if (intensity <= 0) continue
-                    ctx.globalAlpha = intensity
-                    ctx.fillStyle = palette[(cell.c + cell.r) % 4]
-                    ctx.fillRect(cell.c * pitch + 1.2, cell.r * pitch + 1.2, baseSize, baseSize)
-                }
-            }
         }
         ctx.globalAlpha = 1
     }, [])
 
-    const startLoop = useCallback(() => {
-        if (rafRef.current) return
-        const step = (now: number) => {
-            ripplesRef.current = ripplesRef.current.filter((rp) => now - rp.t0 < 1050)
-            paint(now)
-            rafRef.current = ripplesRef.current.length ? requestAnimationFrame(step) : 0
-        }
-        rafRef.current = requestAnimationFrame(step)
-    }, [paint])
-
-    const spawnRipple = useCallback(
-        (px: number, py: number) => {
-            const scene = sceneRef.current
-            if (!scene) return
-            const { pitch } = scene.layout
-            ripplesRef.current.push({ c: px / pitch, r: py / pitch, t0: performance.now() })
-            startLoop()
+    const stopMotion = useCallback(
+        (repaint = true) => {
+            cancelAnimationFrame(rafRef.current)
+            rafRef.current = 0
+            scatterRef.current.clear()
+            flipsRef.current.clear()
+            lastPointerRef.current = null
+            posterTapRef.current = null
+            if (repaint) paint()
         },
-        [startLoop],
+        [paint],
     )
+
+    const startLoop = useCallback(() => {
+        if (rafRef.current || reducedRef.current || !hasMotion()) return
+        lastTickRef.current = performance.now()
+
+        const frame = (now: number) => {
+            if (now - lastPaintRef.current < FRAME_INTERVAL_MS) {
+                rafRef.current = hasMotion() ? requestAnimationFrame(frame) : 0
+                return
+            }
+
+            const dt = Math.min((now - lastTickRef.current) / 1000, 0.05)
+            lastTickRef.current = now
+            lastPaintRef.current = now
+            advanceScatter(scatterRef.current, dt)
+            expireFlips(flipsRef.current, now)
+            paint(now)
+            rafRef.current = hasMotion() ? requestAnimationFrame(frame) : 0
+        }
+
+        rafRef.current = requestAnimationFrame(frame)
+    }, [hasMotion, paint])
 
     const setup = useCallback(() => {
         const wrap = wrapRef.current
@@ -123,20 +240,25 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
         if (!wrap || !canvas) return
         const rect = wrap.getBoundingClientRect()
         if (rect.width === 0 || rect.height === 0) return
-        const dpr = window.devicePixelRatio || 1
-        canvas.width = rect.width * dpr
-        canvas.height = rect.height * dpr
+
+        stopMotion(false)
+        const dpr = canvasDpr(rect.width, window.devicePixelRatio || 1)
+        canvas.width = Math.max(1, Math.round(rect.width * dpr))
+        canvas.height = Math.max(1, Math.round(rect.height * dpr))
         canvas.style.width = `${rect.width}px`
         canvas.style.height = `${rect.height}px`
         const ctx = canvas.getContext('2d')
         if (!ctx) return
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
+        const baseCanvas = document.createElement('canvas')
+        const baseCtx = baseCanvas.getContext('2d')
+        if (!baseCtx) return
+
         paletteRef.current ??= readPalette()
         if (!seedRef.current) seedRef.current = (Math.random() * 1e9) | 0 || 1
         const layout = layoutFabric(rect.width, rect.height)
 
-        // the fabric clears out around the name block so the text sits clean
         let fadeRect
         const text = textRef.current?.getBoundingClientRect()
         if (text) {
@@ -148,21 +270,26 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
             }
         }
 
-        sceneRef.current = { ctx, layout, cells: buildFabric(layout, seedRef.current, fadeRect) }
+        const scene: Scene = {
+            ctx,
+            baseCanvas,
+            baseCtx,
+            width: rect.width,
+            height: rect.height,
+            dpr,
+            layout,
+            cells: buildFabric(layout, seedRef.current, fadeRect),
+        }
+        sceneRef.current = scene
+        renderBaseLayer(scene, paletteRef.current)
         paint()
-    }, [paint])
+    }, [paint, stopMotion])
 
     useEffect(() => {
         const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
         const applyMotionPreference = () => {
             reducedRef.current = reducedQuery.matches
-            if (reducedQuery.matches) {
-                // #6: still poster — drop live ripples, repaint at rest
-                cancelAnimationFrame(rafRef.current)
-                rafRef.current = 0
-                ripplesRef.current = []
-                paint()
-            }
+            if (reducedQuery.matches) stopMotion()
         }
 
         setup()
@@ -175,49 +302,115 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
             reducedQuery.removeEventListener('change', applyMotionPreference)
             observer.disconnect()
         }
-    }, [setup, paint])
+    }, [setup, stopMotion])
 
     useEffect(() => {
         paletteRef.current = readPalette()
-        // same weave, next theme's colors; the running tick repaints on its own
+        const scene = sceneRef.current
+        if (scene) renderBaseLayer(scene, paletteRef.current)
         if (!rafRef.current) paint()
         void theme
     }, [theme, paint])
 
-    const pointAt = (e: React.PointerEvent): { x: number; y: number } | null => {
-        const wrap = wrapRef.current
-        if (!wrap) return null
-        const rect = wrap.getBoundingClientRect()
+    const pointAt = (e: React.PointerEvent<HTMLCanvasElement>): { x: number; y: number } => {
+        const rect = e.currentTarget.getBoundingClientRect()
         return { x: e.clientX - rect.left, y: e.clientY - rect.top }
     }
 
-    const handleMove = (e: React.PointerEvent) => {
+    const handleMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (reducedRef.current) return
+        const scene = sceneRef.current
+        if (!scene) return
+        const point = pointAt(e)
         const now = performance.now()
-        if (now - lastMoveRef.current < MOVE_THROTTLE_MS) return
-        lastMoveRef.current = now
-        const p = pointAt(e)
-        if (p) spawnRipple(p.x, p.y)
+        const previous = lastPointerRef.current
+        const elapsed = previous ? now - previous.time : 0
+        const velocityX = previous && elapsed < 120 ? (point.x - previous.x) / elapsed : 0
+        const velocityY = previous && elapsed < 120 ? (point.y - previous.y) / elapsed : 0
+        lastPointerRef.current = { ...point, time: now }
+
+        applyScatterImpulse(
+            scene.layout,
+            scatterRef.current,
+            point.x,
+            point.y,
+            velocityX,
+            velocityY,
+            0.55,
+        )
+        if (now - lastFlipRef.current >= FLIP_MOVE_THROTTLE_MS) {
+            lastFlipRef.current = now
+            applyFlipTrail(
+                scene.cells,
+                scene.layout,
+                flipsRef.current,
+                point.x,
+                point.y,
+                now,
+                2.6,
+                0.3,
+            )
+        }
+        startLoop()
     }
 
-    const handleDown = (e: React.PointerEvent) => {
+    const handleDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (reducedRef.current) {
-            // still poster: a tap re-seeds the weave as an instant cut
-            seedRef.current = (Math.random() * 1e9) | 0
-            setup()
+            posterTapRef.current = { pointerId: e.pointerId, ...pointAt(e) }
             return
         }
-        handleMove(e)
+        const scene = sceneRef.current
+        if (!scene) return
+        const point = pointAt(e)
+        const now = performance.now()
+        applyScatterImpulse(
+            scene.layout,
+            scatterRef.current,
+            point.x,
+            point.y,
+            0,
+            0,
+            0.9,
+        )
+        applyFlipTrail(
+            scene.cells,
+            scene.layout,
+            flipsRef.current,
+            point.x,
+            point.y,
+            now,
+            3.4,
+            0.5,
+        )
+        startLoop()
+    }
+
+    const handleUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (!reducedRef.current) return
+        const start = posterTapRef.current
+        posterTapRef.current = null
+        if (!start || start.pointerId !== e.pointerId || !isPosterTap(start, pointAt(e), false)) {
+            return
+        }
+        seedRef.current = (Math.random() * 1e9) | 0 || 1
+        setup()
+    }
+
+    const handleCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (posterTapRef.current?.pointerId === e.pointerId) posterTapRef.current = null
     }
 
     return (
-        <div
-            ref={wrapRef}
-            onPointerMove={handleMove}
-            onPointerDown={handleDown}
-            className="absolute inset-0 touch-pan-y overflow-hidden"
-        >
-            <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 block" />
+        <div ref={wrapRef} className="absolute inset-0 overflow-hidden">
+            <canvas
+                ref={canvasRef}
+                aria-hidden="true"
+                onPointerMove={handleMove}
+                onPointerDown={handleDown}
+                onPointerUp={handleUp}
+                onPointerCancel={handleCancel}
+                className="absolute inset-0 block touch-pan-y"
+            />
             <div
                 ref={textRef}
                 className="pointer-events-none absolute bottom-20 left-5 wide:bottom-14 wide:left-14"

@@ -13,6 +13,87 @@ const GLYPHS: Record<string, string[]> = {
     R: ['1111.', '1...1', '1...1', '1111.', '1.1..', '1..1.', '1...1'],
 }
 
+export const MOBILE_GLYPHS: Readonly<Record<string, readonly string[]>> = {
+    D: [
+        '.1111..',
+        '111111.',
+        '1111111',
+        '111.111',
+        '111.111',
+        '111.111',
+        '1111111',
+        '111111.',
+        '.1111..',
+    ],
+    A: [
+        '..111..',
+        '.11111.',
+        '111.111',
+        '111.111',
+        '1111111',
+        '1111111',
+        '111.111',
+        '111.111',
+        '111.111',
+    ],
+    V: [
+        '.1...1.',
+        '111.111',
+        '111.111',
+        '111.111',
+        '111.111',
+        '111.111',
+        '.11111.',
+        '.11111.',
+        '..111..',
+    ],
+    I: ['11111', '11111', '.111.', '.111.', '.111.', '.111.', '.111.', '11111', '11111'],
+    G: [
+        '..1111.',
+        '.111111',
+        '1111111',
+        '111....',
+        '111.111',
+        '111..11',
+        '1111111',
+        '.111111',
+        '..1111.',
+    ],
+    U: [
+        '111.111',
+        '111.111',
+        '111.111',
+        '111.111',
+        '111.111',
+        '111.111',
+        '111.111',
+        '1111111',
+        '.11111.',
+    ],
+    E: [
+        '.111111',
+        '1111111',
+        '1111111',
+        '111....',
+        '111111.',
+        '111111.',
+        '111....',
+        '1111111',
+        '.111111',
+    ],
+    R: [
+        '11111..',
+        '111111.',
+        '111.111',
+        '111.111',
+        '111111.',
+        '11111..',
+        '111111.',
+        '111.111',
+        '111..11',
+    ],
+}
+
 const LINES = ['DAVID', 'GUERRA']
 const GLYPH_ROWS = 7
 const LINE_GAP = 2 // glyph rows between the two lines
@@ -44,55 +125,96 @@ export interface FabricLayout {
     pitch: number
     cols: number
     rows: number
-    k: number
+    clusterSize: number
 }
 
 const NAME_BLOCK_ROWS = GLYPH_ROWS * 2 + LINE_GAP // both lines + gap, in glyph rows
 
 export function layoutFabric(width: number, height: number): FabricLayout {
-    const k = width >= 900 ? 3 : width >= 560 ? 2 : 1
+    const clusterSize = width >= 900 ? 3 : width >= 560 ? 2 : 1
     // GUERRA spans ~80% of the width unless the name block would overflow
     // ~48% of the height (the reference's proportion) — then the height binds.
     const pitch = Math.max(
         6,
         Math.min(
             14,
-            (0.8 * width) / (WIDE_LINE_COLS * k),
-            (0.48 * height) / (NAME_BLOCK_ROWS * k),
+            (0.8 * width) / (WIDE_LINE_COLS * clusterSize),
+            (0.48 * height) / (NAME_BLOCK_ROWS * clusterSize),
         ),
     )
     return {
         pitch,
         cols: Math.ceil(width / pitch),
         rows: Math.ceil(height / pitch),
-        k,
+        clusterSize,
     }
 }
 
-/* Cell indices lit by DAVID over GUERRA, each glyph pixel a k×k cell cluster,
-   each line centered; the block starts a fifth of the way down the grid. */
-export function nameCells(cols: number, rows: number, k: number): Set<number> {
+export function canvasDpr(viewportWidth: number, devicePixelRatio: number): number {
+    const dpr = devicePixelRatio || 1
+    return viewportWidth < 560 ? Math.min(dpr, 2.5) : dpr
+}
+
+/* Cell indices lit by DAVID over GUERRA. Mobile uses the final editor-authored
+   masks in the existing dilation envelope; larger layouts dilate the base glyphs. */
+export function nameCells(
+    cols: number,
+    rows: number,
+    clusterSize: number,
+    weight: 'base' | 'dilated' = 'dilated',
+): Set<number> {
     const set = new Set<number>()
+    const useMobileMasks = clusterSize === 1 && weight === 'dilated'
     const startRow = Math.max(3, Math.round(rows * 0.2))
-    LINES.forEach((line, li) => {
+
+    LINES.forEach((line, lineIndex) => {
         const lineCols = line.split('').reduce((n, ch) => n + GLYPHS[ch][0].length + 1, -1)
-        let c0 = Math.floor((cols - lineCols * k) / 2)
-        const r0 = startRow + li * (GLYPH_ROWS + LINE_GAP) * k
+        let c0 = Math.floor((cols - lineCols * clusterSize) / 2)
+        const r0 = startRow + lineIndex * (GLYPH_ROWS + LINE_GAP) * clusterSize
+
         for (const ch of line) {
-            const glyph = GLYPHS[ch]
-            glyph.forEach((rowStr, gr) => {
-                rowStr.split('').forEach((bit, gc) => {
-                    if (bit !== '1') return
-                    for (let dr = 0; dr < k; dr++) {
-                        for (let dc = 0; dc < k; dc++) {
-                            set.add((r0 + gr * k + dr) * cols + (c0 + gc * k + dc))
+            if (useMobileMasks) {
+                MOBILE_GLYPHS[ch].forEach((row, maskRow) => {
+                    Array.from(row).forEach((bit, maskCol) => {
+                        if (bit !== '1') return
+                        const r = r0 - 1 + maskRow
+                        const c = c0 - 1 + maskCol
+                        if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                            set.add(r * cols + c)
                         }
-                    }
+                    })
                 })
-            })
-            c0 += (glyph[0].length + 1) * k
+            } else {
+                GLYPHS[ch].forEach((row, glyphRow) => {
+                    Array.from(row).forEach((bit, glyphCol) => {
+                        if (bit !== '1') return
+                        for (let dr = 0; dr < clusterSize; dr++) {
+                            for (let dc = 0; dc < clusterSize; dc++) {
+                                set.add(
+                                    (r0 + glyphRow * clusterSize + dr) * cols +
+                                        (c0 + glyphCol * clusterSize + dc),
+                                )
+                            }
+                        }
+                    })
+                })
+            }
+            c0 += (GLYPHS[ch][0].length + 1) * clusterSize
         }
     })
+
+    if (weight === 'base' || useMobileMasks) return set
+
+    const ring: number[] = []
+    for (const idx of set) {
+        const r = Math.floor(idx / cols)
+        const c = idx % cols
+        if (c > 0) ring.push(idx - 1)
+        if (c < cols - 1) ring.push(idx + 1)
+        if (r > 0) ring.push(idx - cols)
+        if (r < rows - 1) ring.push(idx + cols)
+    }
+    for (const idx of ring) set.add(idx)
     return set
 }
 
@@ -120,9 +242,9 @@ export interface FabricCell {
 }
 
 export function buildFabric(layout: FabricLayout, seed: number, fadeRect?: FadeRect): FabricCell[] {
-    const { cols, rows, k } = layout
+    const { cols, rows, clusterSize } = layout
     const rnd = mulberry32(seed)
-    const names = nameCells(cols, rows, k)
+    const names = nameCells(cols, rows, clusterSize)
     const cells: FabricCell[] = []
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -156,16 +278,146 @@ export function buildFabric(layout: FabricLayout, seed: number, fadeRect?: FadeR
     return cells
 }
 
-const RIPPLE_SPEED = 16 // cells per second
-const RIPPLE_BAND = 2.6 // cells
-const RIPPLE_LIFE = 1.05 // seconds
+export interface ScatterMotion {
+    ox: number
+    oy: number
+    vx: number
+    vy: number
+}
 
-/* Intensity of a ripple ring at a cell `dist` cells from its center,
-   `elapsedSec` after it was spawned. */
-export function rippleIntensity(dist: number, elapsedSec: number): number {
-    const fade = 1 - elapsedSec / RIPPLE_LIFE
-    if (fade <= 0) return 0
-    const delta = Math.abs(dist - elapsedSec * RIPPLE_SPEED)
-    if (delta >= RIPPLE_BAND) return 0
-    return fade * (1 - delta / RIPPLE_BAND) * 0.9
+export interface FlipMotion {
+    kind: -1 | 0 | 1 | 2 | 3
+    alpha: number
+    until: number
+}
+
+export interface FabricPoint {
+    x: number
+    y: number
+}
+
+export function isPosterTap(
+    start: FabricPoint,
+    end: FabricPoint,
+    cancelled: boolean,
+    maxMovement = 8,
+): boolean {
+    return !cancelled && Math.hypot(end.x - start.x, end.y - start.y) <= maxMovement
+}
+
+export function applyScatterImpulse(
+    layout: FabricLayout,
+    active: Map<number, ScatterMotion>,
+    x: number,
+    y: number,
+    pointerVelocityX: number,
+    pointerVelocityY: number,
+    multiplier: number,
+): number {
+    const { pitch, cols, rows } = layout
+    const radius = pitch * 7
+    const r0 = Math.max(0, Math.floor((y - radius) / pitch))
+    const r1 = Math.min(rows - 1, Math.ceil((y + radius) / pitch))
+    const c0 = Math.max(0, Math.floor((x - radius) / pitch))
+    const c1 = Math.min(cols - 1, Math.ceil((x + radius) / pitch))
+    const speed = Math.min(Math.hypot(pointerVelocityX, pointerVelocityY), 3)
+
+    for (let r = r0; r <= r1; r++) {
+        for (let c = c0; c <= c1; c++) {
+            const idx = r * cols + c
+            const motion = active.get(idx) ?? { ox: 0, oy: 0, vx: 0, vy: 0 }
+            const dx = c * pitch + pitch / 2 + motion.ox - x
+            const dy = r * pitch + pitch / 2 + motion.oy - y
+            const distance = Math.hypot(dx, dy)
+            if (distance > radius) continue
+
+            const falloff = (1 - distance / radius) ** 2
+            const inverseDistance = distance > 0.001 ? 1 / distance : 0
+            const impulse = (140 + speed * 820) * falloff * multiplier * (pitch / 12)
+            const velocityX =
+                dx * inverseDistance * impulse +
+                pointerVelocityX * 1000 * 0.32 * falloff * multiplier
+            const velocityY =
+                dy * inverseDistance * impulse +
+                pointerVelocityY * 1000 * 0.32 * falloff * multiplier
+
+            if (!active.has(idx) && velocityX ** 2 + velocityY ** 2 < 625) continue
+            motion.vx += velocityX
+            motion.vy += velocityY
+            active.set(idx, motion)
+        }
+    }
+    return active.size
+}
+
+export function applyFlipTrail(
+    cells: readonly FabricCell[],
+    layout: FabricLayout,
+    active: Map<number, FlipMotion>,
+    x: number,
+    y: number,
+    now: number,
+    radiusCells: number,
+    probability: number,
+    random: () => number = Math.random,
+): number {
+    const { pitch, cols, rows } = layout
+    const pointerC = x / pitch
+    const pointerR = y / pitch
+    const r0 = Math.max(0, Math.floor(pointerR - radiusCells))
+    const r1 = Math.min(rows - 1, Math.ceil(pointerR + radiusCells))
+    const c0 = Math.max(0, Math.floor(pointerC - radiusCells))
+    const c1 = Math.min(cols - 1, Math.ceil(pointerC + radiusCells))
+
+    for (let r = r0; r <= r1; r++) {
+        for (let c = c0; c <= c1; c++) {
+            const idx = r * cols + c
+            const cell = cells[idx]
+            if (cell.kind === KIND_NAME) continue
+            const distance = Math.hypot(c + 0.5 - pointerC, r + 0.5 - pointerR)
+            if (distance > radiusCells) continue
+            if (random() >= probability * (1 - distance / radiusCells)) continue
+
+            const existing = active.get(idx)
+            if (existing) {
+                existing.until = now + 320 + random() * 1050
+                continue
+            }
+
+            const lit = KIND_ACCENTS.includes(cell.kind) || cell.kind === KIND_GRAY_HI
+            const kind: FlipMotion['kind'] = lit
+                ? -1
+                : (((random() * 4) | 0) as 0 | 1 | 2 | 3)
+            const alpha = lit ? 0 : 0.72 + random() * 0.28
+            active.set(idx, { kind, alpha, until: now + 320 + random() * 1050 })
+        }
+    }
+    return active.size
+}
+
+export function advanceScatter(active: Map<number, ScatterMotion>, dt: number): number {
+    const friction = Math.exp(-6.5 * dt)
+    for (const [idx, motion] of active) {
+        motion.vx += -motion.ox * 52 * dt
+        motion.vy += -motion.oy * 52 * dt
+        motion.vx *= friction
+        motion.vy *= friction
+        motion.ox += motion.vx * dt
+        motion.oy += motion.vy * dt
+
+        if (
+            motion.ox ** 2 + motion.oy ** 2 < 0.6 &&
+            motion.vx ** 2 + motion.vy ** 2 < 64
+        ) {
+            active.delete(idx)
+        }
+    }
+    return active.size
+}
+
+export function expireFlips(active: Map<number, FlipMotion>, now: number): number {
+    for (const [idx, flip] of active) {
+        if (flip.until <= now) active.delete(idx)
+    }
+    return active.size
 }
