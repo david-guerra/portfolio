@@ -11,7 +11,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
         <section
             id="about"
             aria-labelledby="about-heading"
-            className="h-full snap-start snap-always overflow-y-auto px-5 py-6 wide:px-14 wide:py-20"
+            className="min-h-full px-5 py-6 wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-20"
         >
             <div className="mx-auto flex min-h-full w-full max-w-[1364px] flex-col">
                 <div className="grid wide:grid-cols-12 wide:gap-x-10">
@@ -63,7 +63,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
 
                 <footer className="mt-8 wide:mt-auto wide:pt-12">
                     <p className="text-sm tracking-wide text-body">Peruvian · Based in Berlin</p>
-                    <div className="mt-5 flex justify-end border-t border-border pt-4 wide:mt-8 wide:pt-6">
+                    <div className="hidden justify-end border-t border-border wide:mt-8 wide:flex wide:pt-6">
                         <button
                             type="button"
                             onClick={onScrollNext}
