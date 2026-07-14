@@ -23,6 +23,18 @@ const ACCENT_BORDER: Record<ProjectAccent, string> = {
     orange: 'border-orange',
 }
 
+const ACCENT_BORDER_LEFT: Record<ProjectAccent, string> = {
+    teal: 'border-l-teal',
+    lavender: 'border-l-lavender',
+    orange: 'border-l-orange',
+}
+
+const ACCENT_BORDER_RIGHT: Record<ProjectAccent, string> = {
+    teal: 'border-r-teal',
+    lavender: 'border-r-lavender',
+    orange: 'border-r-orange',
+}
+
 interface ArrowIconProps {
     direction: 'left' | 'right' | 'down'
 }
@@ -214,12 +226,12 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                     data-testid="projects-desktop-content"
                     className="hidden min-h-0 flex-1 flex-col wide:flex"
                 >
-                    <div className="mt-7 flex min-h-0 flex-1 gap-0.5 wide:min-h-[260px]">
+                    <div className="mt-7 flex min-h-0 flex-1 gap-0 wide:min-h-[260px]">
                     <button
                         type="button"
                         aria-label={`Show previous project: ${previous.title}`}
                         onClick={() => selectRelative(-1)}
-                        className={`group relative hidden w-[clamp(190px,18vw,270px)] shrink-0 cursor-pointer overflow-hidden rounded-l-card border wide:block ${ACCENT_BORDER[previous.accent]} ${FOCUS_RING}`}
+                        className={`group relative hidden w-[clamp(190px,18vw,270px)] shrink-0 cursor-pointer overflow-hidden rounded-l-card border-y border-y-border border-l wide:block ${ACCENT_BORDER_LEFT[previous.accent]} ${FOCUS_RING}`}
                     >
                         <img
                             src={previous.carouselImage}
@@ -258,7 +270,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                             if (!dragged.current) setGalleryProject(project)
                             dragged.current = false
                         }}
-                        className={`group relative min-h-0 min-w-0 flex-1 cursor-grab overflow-hidden border-y bg-surface active:cursor-grabbing ${ACCENT_BORDER[project.accent]} ${FOCUS_RING}`}
+                        className={`group relative z-10 min-h-0 min-w-0 flex-1 cursor-grab overflow-hidden border bg-surface shadow-[0_0_0_3px_rgba(13,13,15,0.72)] active:cursor-grabbing ${ACCENT_BORDER[project.accent]} ${FOCUS_RING}`}
                     >
                         <img
                             src={project.carouselImage}
@@ -282,7 +294,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         type="button"
                         aria-label={`Show next project: ${next.title}`}
                         onClick={() => selectRelative(1)}
-                        className={`group relative hidden w-[clamp(190px,18vw,270px)] shrink-0 cursor-pointer overflow-hidden rounded-r-card border wide:block ${ACCENT_BORDER[next.accent]} ${FOCUS_RING}`}
+                        className={`group relative hidden w-[clamp(190px,18vw,270px)] shrink-0 cursor-pointer overflow-hidden rounded-r-card border-y border-y-border border-r wide:block ${ACCENT_BORDER_RIGHT[next.accent]} ${FOCUS_RING}`}
                     >
                         <img
                             src={next.carouselImage}

@@ -151,18 +151,37 @@ describe('Projects section', () => {
     })
 
     test('keeps desktop neighbor projects wide, dark, and visibly labeled in every theme', () => {
-        const { getByRole } = render(
+        const { getByRole, getByTestId } = render(
             <ProjectsSection onScrollNext={() => undefined} />,
         )
+        const desktop = getByTestId('projects-desktop-content')
+        const rail = desktop.firstElementChild
         const previous = getByRole('button', { name: 'Show previous project: Fest' })
+        const selected = getByRole('button', { name: 'Open Arcade, compiled gallery' })
         const next = getByRole('button', { name: 'Show next project: CleanVoice' })
         const previousImage = previous.querySelector('img')
         const nextImage = next.querySelector('img')
 
+        expect(rail).not.toBeNull()
+        expect(rail?.classList).toContain('gap-0')
+        expect(rail?.classList).not.toContain('gap-0.5')
         expect(previous.classList).toContain('w-[clamp(190px,18vw,270px)]')
         expect(next.classList).toContain('w-[clamp(190px,18vw,270px)]')
-        expect(previous.classList).toContain('border-orange')
-        expect(next.classList).toContain('border-lavender')
+        expect(previous.classList).toContain('border-y')
+        expect(previous.classList).toContain('border-y-border')
+        expect(previous.classList).toContain('border-l')
+        expect(previous.classList).toContain('border-l-orange')
+        expect(previous.classList).not.toContain('border')
+        expect(next.classList).toContain('border-y')
+        expect(next.classList).toContain('border-y-border')
+        expect(next.classList).toContain('border-r')
+        expect(next.classList).toContain('border-r-lavender')
+        expect(next.classList).not.toContain('border')
+        expect(selected.classList).toContain('border')
+        expect(selected.classList).toContain('border-teal')
+        expect(selected.classList).toContain('z-10')
+        expect(selected.classList).toContain('shadow-[0_0_0_3px_rgba(13,13,15,0.72)]')
+        expect(selected.classList).not.toContain('border-y')
         const previousTitle = within(previous).getByText('Fest')
         const nextTitle = within(next).getByText('CleanVoice')
         const previousDirection = within(previous).getByText('← Previous')
