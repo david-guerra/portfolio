@@ -11,6 +11,12 @@ const ACCENT_TEXT: Record<ProjectAccent, string> = {
     orange: 'text-orange',
 }
 
+const ACCENT_TEXT_ON_DARK: Record<ProjectAccent, string> = {
+    teal: 'text-[#5cc9c4]',
+    lavender: 'text-[#a48ef0]',
+    orange: 'text-[#e8734a]',
+}
+
 const ACCENT_BORDER: Record<ProjectAccent, string> = {
     teal: 'border-teal',
     lavender: 'border-lavender',
@@ -199,7 +205,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         <span className="absolute inset-0 bg-linear-to-r from-bg/[0.28] via-transparent via-50% to-transparent" />
                         <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-[#0d0d0f] px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[previous.accent]}`}>
                             <span className="text-[#f3e9d2]">{previous.title}</span>
-                            <span className={ACCENT_TEXT[previous.accent]}>← Previous</span>
+                            <span className={ACCENT_TEXT_ON_DARK[previous.accent]}>← Previous</span>
                         </span>
                     </button>
 
@@ -250,7 +256,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         <span className="absolute inset-0 bg-linear-to-l from-bg/[0.28] via-transparent via-50% to-transparent" />
                         <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-[#0d0d0f] px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[next.accent]}`}>
                             <span className="text-[#f3e9d2]">{next.title}</span>
-                            <span className={ACCENT_TEXT[next.accent]}>Next →</span>
+                            <span className={ACCENT_TEXT_ON_DARK[next.accent]}>Next →</span>
                         </span>
                     </button>
                     </div>
