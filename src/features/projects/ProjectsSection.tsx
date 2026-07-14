@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import ProjectGalleryDialog from './ProjectGalleryDialog.tsx'
 import { PROJECTS, type Project, type ProjectAccent } from './projects.ts'
 
@@ -56,6 +56,18 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
     const previous = PROJECTS[(projectIndex - 1 + PROJECTS.length) % PROJECTS.length]
     const next = PROJECTS[(projectIndex + 1) % PROJECTS.length]
 
+    useEffect(() => {
+        const syncMobileDeck = () => {
+            const deck = mobileDeckRef.current
+            if (!deck) return
+            const step = Math.max(1, deck.clientWidth - 32)
+            deck.scrollTo?.({ left: step * projectIndex })
+        }
+
+        window.addEventListener('resize', syncMobileDeck)
+        return () => window.removeEventListener('resize', syncMobileDeck)
+    }, [projectIndex])
+
     const selectRelative = (delta: -1 | 1) => {
         setProjectIndex((current) => (current + delta + PROJECTS.length) % PROJECTS.length)
     }
@@ -63,6 +75,9 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
     const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
         const start = dragStartX.current
         dragStartX.current = null
+        if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+            event.currentTarget.releasePointerCapture?.(event.pointerId)
+        }
         if (start === null) return
 
         const distance = start - event.clientX
@@ -81,14 +96,15 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                 if (event.key === 'ArrowLeft') selectRelative(-1)
                 if (event.key === 'ArrowRight') selectRelative(1)
             }}
-            className="min-h-full px-5 py-8 outline-none wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
+            className="min-h-full px-5 py-8 outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-orange wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
         >
             <div className="mx-auto flex min-h-full w-full max-w-[1474px] flex-col wide:h-full wide:min-h-0">
                 <div className="flex flex-col justify-between gap-4 wide:flex-row wide:items-start">
                     <div>
                         <p className="text-label text-muted uppercase">PROJECTS</p>
                         <p className="mt-1 text-base text-ink">
-                            {String(projectIndex + 1).padStart(2, '0')} / 03
+                            {String(projectIndex + 1).padStart(2, '0')} /{' '}
+                            {String(PROJECTS.length).padStart(2, '0')}
                         </p>
                         <p className="mt-1 text-meta text-muted">
                             <span className="wide:hidden">swipe to browse</span>
@@ -128,6 +144,8 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                                 <img
                                     src={item.carouselImage}
                                     alt={item.carouselAlt}
+                                    loading="lazy"
+                                    decoding="async"
                                     className="aspect-[16/10] w-full object-cover"
                                 />
                             </button>
@@ -200,6 +218,8 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         <img
                             src={previous.carouselImage}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             className="h-full w-full scale-[1.012] object-cover object-right brightness-[0.64] saturate-[0.82] blur-[0.45px] transition-[filter] motion-reduce:transition-none group-hover:brightness-[0.82] group-hover:saturate-[0.95] group-hover:blur-none group-focus-visible:brightness-[0.82] group-focus-visible:saturate-[0.95] group-focus-visible:blur-none"
                         />
                         <span className="absolute inset-0 bg-linear-to-r from-bg/[0.28] via-transparent via-50% to-transparent" />
@@ -215,9 +235,17 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         onPointerDown={(event) => {
                             dragged.current = false
                             dragStartX.current = event.clientX
+                            event.currentTarget.setPointerCapture?.(event.pointerId)
                         }}
                         onPointerUp={finishDrag}
-                        onPointerCancel={() => {
+                        onPointerCancel={(event) => {
+                            if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+                                event.currentTarget.releasePointerCapture?.(event.pointerId)
+                            }
+                            dragStartX.current = null
+                            dragged.current = false
+                        }}
+                        onLostPointerCapture={() => {
                             dragStartX.current = null
                         }}
                         onClick={() => {
@@ -230,6 +258,8 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                             src={project.carouselImage}
                             alt={project.carouselAlt}
                             draggable="false"
+                            loading="lazy"
+                            decoding="async"
                             className="h-full w-full object-cover"
                         />
                         <span
@@ -251,6 +281,8 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         <img
                             src={next.carouselImage}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             className="h-full w-full scale-[1.012] object-cover object-left brightness-[0.64] saturate-[0.82] blur-[0.45px] transition-[filter] motion-reduce:transition-none group-hover:brightness-[0.82] group-hover:saturate-[0.95] group-hover:blur-none group-focus-visible:brightness-[0.82] group-focus-visible:saturate-[0.95] group-focus-visible:blur-none"
                         />
                         <span className="absolute inset-0 bg-linear-to-l from-bg/[0.28] via-transparent via-50% to-transparent" />

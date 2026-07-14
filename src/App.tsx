@@ -63,7 +63,7 @@ export default function App() {
                 onScroll={handleScroll}
                 className="relative flex-1 scroll-smooth overflow-y-scroll [scrollbar-width:none] motion-reduce:scroll-auto wide:snap-y wide:snap-mandatory [&::-webkit-scrollbar]:hidden"
             >
-                {/* Remaining pane contents land via their own tickets: Projects #12, Arcade #13. */}
+                {/* The remaining Arcade pane content lands via ticket #13. */}
                 <section
                     id="hero"
                     className="relative min-h-full wide:h-full wide:snap-start wide:snap-always"

@@ -86,11 +86,11 @@ export default function ProjectGalleryDialog({
 
                 <div
                     data-testid="project-gallery-layout"
-                    className="grid min-h-0 min-w-0 flex-1 gap-6 wide:grid-cols-[minmax(0,2fr)_minmax(260px,0.9fr)] wide:gap-8"
+                    className="grid min-h-0 min-w-0 flex-1 gap-6 overflow-y-auto wide:grid-cols-[minmax(0,2fr)_minmax(260px,0.9fr)] wide:gap-8 wide:overflow-hidden"
                 >
                     <div
                         data-testid="project-gallery-media"
-                        className="flex min-h-0 min-w-0 flex-col wide:border-r wide:border-border wide:pr-8"
+                        className="flex min-h-0 min-w-0 flex-col wide:overflow-y-auto wide:border-r wide:border-border wide:pr-8"
                     >
                         <div
                             data-testid="project-gallery-frame"
@@ -99,6 +99,7 @@ export default function ProjectGalleryDialog({
                             <img
                                 src={image.image}
                                 alt={image.alt}
+                                decoding="async"
                                 className="block h-auto w-full object-contain"
                             />
                         </div>
@@ -118,8 +119,10 @@ export default function ProjectGalleryDialog({
                                     } ${FOCUS_RING}`}
                                 >
                                     <img
-                                        src={item.image}
+                                        src={item.thumbnailImage}
                                         alt=""
+                                        loading="lazy"
+                                        decoding="async"
                                         className="aspect-video w-full object-cover"
                                     />
                                     <span
@@ -140,26 +143,28 @@ export default function ProjectGalleryDialog({
                                 {String(imageIndex + 1).padStart(2, '0')} /{' '}
                                 {String(project.gallery.length).padStart(2, '0')}
                             </span>
-                            <div className="flex gap-5 text-lavender">
-                                <button
-                                    type="button"
-                                    aria-label="Previous gallery image"
-                                    onClick={() => selectRelative(-1)}
-                                    className={`flex cursor-pointer items-center gap-1.5 ${FOCUS_RING}`}
-                                >
-                                    <GalleryArrow direction="left" />
-                                    <span className="max-sm:sr-only">Previous</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    aria-label="Next gallery image"
-                                    onClick={() => selectRelative(1)}
-                                    className={`flex cursor-pointer items-center gap-1.5 ${FOCUS_RING}`}
-                                >
-                                    <span className="max-sm:sr-only">Next</span>
-                                    <GalleryArrow direction="right" />
-                                </button>
-                            </div>
+                            {project.gallery.length > 1 ? (
+                                <div className="flex gap-5 text-lavender">
+                                    <button
+                                        type="button"
+                                        aria-label="Previous gallery image"
+                                        onClick={() => selectRelative(-1)}
+                                        className={`flex cursor-pointer items-center gap-1.5 ${FOCUS_RING}`}
+                                    >
+                                        <GalleryArrow direction="left" />
+                                        <span className="max-sm:sr-only">Previous</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label="Next gallery image"
+                                        onClick={() => selectRelative(1)}
+                                        className={`flex cursor-pointer items-center gap-1.5 ${FOCUS_RING}`}
+                                    >
+                                        <span className="max-sm:sr-only">Next</span>
+                                        <GalleryArrow direction="right" />
+                                    </button>
+                                </div>
+                            ) : null}
                         </div>
                     </div>
 

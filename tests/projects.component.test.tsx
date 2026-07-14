@@ -59,10 +59,15 @@ describe('Projects section', () => {
         const { PROJECTS: basedProjects } = await import('../src/features/projects/projects.ts')
         const images = basedProjects.flatMap((project) => [
             project.carouselImage,
-            ...project.gallery.map((item) => item.image),
+            ...project.gallery.flatMap((item) => [item.image, item.thumbnailImage]),
         ])
 
         expect(images.every((image) => image.startsWith('/portfolio/project-images/'))).toBe(true)
+        expect(
+            basedProjects.every((project) =>
+                project.gallery.every((item) => item.thumbnailImage.endsWith('-thumbnail.png')),
+            ),
+        ).toBe(true)
     })
 
     test('leads with the approved Arcade project and exact copy', () => {
@@ -70,7 +75,9 @@ describe('Projects section', () => {
         const desktop = within(projects.getByTestId('projects-desktop-content'))
 
         expect(projects.getByText('PROJECTS')).toBeTruthy()
-        expect(projects.getByText('01 / 03')).toBeTruthy()
+        expect(
+            projects.getByText(`01 / ${String(PROJECTS.length).padStart(2, '0')}`),
+        ).toBeTruthy()
         expect(
             projects.getByText(
                 'Most experiments stay experiments. These are the ones I kept coming back to.',
@@ -115,6 +122,32 @@ describe('Projects section', () => {
         fireEvent.click(getByRole('button', { name: 'Previous project' }))
         fireEvent.click(getByRole('button', { name: 'Play in Arcade ↓' }))
         expect(onScrollNext).toHaveBeenCalledOnce()
+    })
+
+    test('captures the center-card pointer so a desktop drag completes off the original hit area', () => {
+        const { getByRole, queryByRole } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const preview = getByRole('button', { name: 'Open Arcade, compiled gallery' })
+        const setPointerCapture = vi.fn()
+        const hasPointerCapture = vi.fn(() => true)
+        const releasePointerCapture = vi.fn()
+        Object.defineProperties(preview, {
+            setPointerCapture: { configurable: true, value: setPointerCapture },
+            hasPointerCapture: { configurable: true, value: hasPointerCapture },
+            releasePointerCapture: { configurable: true, value: releasePointerCapture },
+        })
+
+        fireEvent.pointerDown(preview, { clientX: 300, pointerId: 7 })
+        expect(setPointerCapture).toHaveBeenCalledWith(7)
+
+        fireEvent.pointerUp(preview, { clientX: 100, pointerId: 7 })
+        fireEvent.click(preview)
+
+        expect(hasPointerCapture).toHaveBeenCalledWith(7)
+        expect(releasePointerCapture).toHaveBeenCalledWith(7)
+        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+        expect(queryByRole('dialog')).toBeNull()
     })
 
     test('keeps desktop neighbor projects wide, dark, and visibly labeled in every theme', () => {
@@ -192,6 +225,35 @@ describe('Projects section', () => {
         expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
     })
 
+    test('syncs the mobile deck to the selected desktop project after a resize', () => {
+        const { getByRole, getByTestId, getByText } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const deck = getByTestId('projects-mobile-deck')
+        const scrollTo = vi.fn()
+        Object.defineProperty(deck, 'clientWidth', { configurable: true, value: 393 })
+        Object.defineProperty(deck, 'scrollTo', { configurable: true, value: scrollTo })
+
+        fireEvent.click(getByRole('button', { name: 'Previous project' }))
+        expect(getByText('03 / 03')).toBeTruthy()
+
+        fireEvent(window, new Event('resize'))
+        expect(scrollTo).toHaveBeenCalledWith({ left: 722 })
+    })
+
+    test('defers every below-fold carousel image load and decode', () => {
+        const { container } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const carouselImages = container.querySelectorAll('#projects img')
+
+        expect(carouselImages).toHaveLength(6)
+        for (const image of carouselImages) {
+            expect(image.getAttribute('loading')).toBe('lazy')
+            expect(image.getAttribute('decoding')).toBe('async')
+        }
+    })
+
     test('constrains the desktop flex column so the project footer stays in its pane', () => {
         const { section, projects } = renderProjects()
         const inner = section.firstElementChild
@@ -202,6 +264,9 @@ describe('Projects section', () => {
         expect(inner?.classList.contains('wide:h-full')).toBe(true)
         expect(inner?.classList.contains('wide:min-h-0')).toBe(true)
         expect(mediaRail?.classList.contains('min-h-0')).toBe(true)
+        expect(section.classList).toContain('focus-visible:outline-2')
+        expect(section.classList).toContain('focus-visible:outline-offset-[-2px]')
+        expect(section.classList).toContain('focus-visible:outline-orange')
     })
 
     test('opens the truthful gallery, switches and wraps frames, and closes both ways', () => {
@@ -226,10 +291,19 @@ describe('Projects section', () => {
         expect(galleryImage.classList).not.toContain('h-full')
         expect(galleryImage.classList).not.toContain('max-h-[48dvh]')
         expect(galleryImage.classList).not.toContain('wide:max-h-[50dvh]')
+        expect(galleryImage.getAttribute('decoding')).toBe('async')
+        expect(galleryImage.getAttribute('src')).toMatch(/arcade-gallery-01-hub\.png$/)
 
-        expect(gallery.getByTestId('project-gallery-layout').classList).toContain('min-w-0')
-        expect(gallery.getByTestId('project-gallery-media').classList).toContain('min-w-0')
-        expect(gallery.getByTestId('project-gallery-copy').classList).toContain('min-w-0')
+        const galleryLayout = gallery.getByTestId('project-gallery-layout')
+        const galleryMedia = gallery.getByTestId('project-gallery-media')
+        const galleryCopy = gallery.getByTestId('project-gallery-copy')
+        expect(galleryLayout.classList).toContain('min-w-0')
+        expect(galleryLayout.classList).toContain('overflow-y-auto')
+        expect(galleryLayout.classList).toContain('wide:overflow-hidden')
+        expect(galleryMedia.classList).toContain('min-w-0')
+        expect(galleryMedia.classList).toContain('wide:overflow-y-auto')
+        expect(galleryCopy.classList).toContain('min-w-0')
+        expect(galleryCopy.classList).toContain('overflow-y-auto')
         expect(gallery.getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
         expect(gallery.getByText('01 / 04')).toBeTruthy()
         expect(
@@ -237,6 +311,17 @@ describe('Projects section', () => {
                 name: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
             }),
         ).toBeTruthy()
+
+        const galleryThumbnails = gallery
+            .getAllByRole('button', { name: /^Show .+ image$/ })
+            .map((button) => button.querySelector('img'))
+        expect(galleryThumbnails).toHaveLength(4)
+        for (const thumbnail of galleryThumbnails) {
+            expect(thumbnail).not.toBeNull()
+            expect(thumbnail?.getAttribute('src')).toMatch(/-thumbnail\.png$/)
+            expect(thumbnail?.getAttribute('loading')).toBe('lazy')
+            expect(thumbnail?.getAttribute('decoding')).toBe('async')
+        }
 
         fireEvent.click(gallery.getByRole('button', { name: 'Show Sudoku image' }))
         expect(gallery.getByText('03 / 04')).toBeTruthy()
@@ -261,6 +346,21 @@ describe('Projects section', () => {
         fireEvent.click(gallery.getByRole('button', { name: 'Play in Arcade ↓' }))
         expect(onScrollNext).toHaveBeenCalledOnce()
         expect(queryByRole('dialog')).toBeNull()
+    })
+
+    test('hides gallery navigation when the selected project has one image', () => {
+        const { getByRole, getByTestId } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+
+        fireEvent.click(getByRole('button', { name: 'Show next project: CleanVoice' }))
+        const desktop = within(getByTestId('projects-desktop-content'))
+        fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
+
+        const gallery = within(getByRole('dialog'))
+        expect(gallery.getByText('01 / 01')).toBeTruthy()
+        expect(gallery.queryByRole('button', { name: 'Previous gallery image' })).toBeNull()
+        expect(gallery.queryByRole('button', { name: 'Next gallery image' })).toBeNull()
     })
 
     test('App advances from the Arcade project action to the rendered Arcade pane', () => {

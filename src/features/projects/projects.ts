@@ -3,6 +3,7 @@ export type ProjectAccent = 'teal' | 'lavender' | 'orange'
 export interface GalleryItem {
     label: string
     image: string
+    thumbnailImage: string
     alt: string
 }
 
@@ -34,21 +35,25 @@ export const PROJECTS: readonly Project[] = [
             {
                 label: 'Arcade hub',
                 image: projectImage('arcade-gallery-01-hub.png'),
+                thumbnailImage: projectImage('arcade-gallery-01-hub-thumbnail.png'),
                 alt: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
             },
             {
                 label: 'Connect Four',
                 image: projectImage('arcade-gallery-02-connect-four.png'),
+                thumbnailImage: projectImage('arcade-gallery-02-connect-four-thumbnail.png'),
                 alt: 'Connect Four game in progress against the browser bot',
             },
             {
                 label: 'Sudoku',
                 image: projectImage('arcade-gallery-03-sudoku.png'),
+                thumbnailImage: projectImage('arcade-gallery-03-sudoku-thumbnail.png'),
                 alt: 'Sudoku game in progress with its number controls',
             },
             {
                 label: 'Game of Life',
                 image: projectImage('arcade-gallery-04-game-of-life.png'),
+                thumbnailImage: projectImage('arcade-gallery-04-game-of-life-thumbnail.png'),
                 alt: 'Game of Life grid with a recognizable living pattern',
             },
         ],
@@ -66,6 +71,7 @@ export const PROJECTS: readonly Project[] = [
             {
                 label: 'Overview',
                 image: projectImage('applied-ai-carousel.png'),
+                thumbnailImage: projectImage('applied-ai-carousel-thumbnail.png'),
                 alt: 'CleanVoice call-to-booking workflow design reference',
             },
         ],
@@ -83,6 +89,7 @@ export const PROJECTS: readonly Project[] = [
             {
                 label: 'Lexer & specification',
                 image: projectImage('compiler-carousel.png'),
+                thumbnailImage: projectImage('compiler-carousel-thumbnail.png'),
                 alt: 'Fest source text beside its lexer output and selected specification rules',
             },
         ],
