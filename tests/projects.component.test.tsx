@@ -117,7 +117,7 @@ describe('Projects section', () => {
         expect(onScrollNext).toHaveBeenCalledOnce()
     })
 
-    test('keeps desktop neighbor projects wide, dark, and visibly labeled', () => {
+    test('keeps desktop neighbor projects wide, dark, and visibly labeled in every theme', () => {
         const { getByRole } = render(
             <ProjectsSection onScrollNext={() => undefined} />,
         )
@@ -130,10 +130,23 @@ describe('Projects section', () => {
         expect(next.classList).toContain('w-[clamp(190px,18vw,270px)]')
         expect(previous.classList).toContain('border-orange')
         expect(next.classList).toContain('border-lavender')
-        expect(within(previous).getByText('Fest')).toBeTruthy()
+        const previousTitle = within(previous).getByText('Fest')
+        const nextTitle = within(next).getByText('CleanVoice')
+
+        expect(previousTitle).toBeTruthy()
         expect(within(previous).getByText('← Previous')).toBeTruthy()
-        expect(within(next).getByText('CleanVoice')).toBeTruthy()
+        expect(nextTitle).toBeTruthy()
         expect(within(next).getByText('Next →')).toBeTruthy()
+
+        for (const title of [previousTitle, nextTitle]) {
+            const labelChip = title.parentElement
+
+            expect(labelChip).not.toBeNull()
+            expect(labelChip?.classList).toContain('bg-[#0d0d0f]')
+            expect(labelChip?.classList).not.toContain('bg-bg')
+            expect(title.classList).toContain('text-[#f3e9d2]')
+            expect(title.classList).not.toContain('text-ink')
+        }
 
         for (const image of [previousImage, nextImage]) {
             expect(image).not.toBeNull()
@@ -141,7 +154,11 @@ describe('Projects section', () => {
             expect(image?.classList).toContain('saturate-[0.82]')
             expect(image?.classList).toContain('blur-[0.45px]')
             expect(image?.classList).toContain('group-hover:brightness-[0.82]')
+            expect(image?.classList).toContain('group-hover:saturate-[0.95]')
+            expect(image?.classList).toContain('group-hover:blur-none')
             expect(image?.classList).toContain('group-focus-visible:brightness-[0.82]')
+            expect(image?.classList).toContain('group-focus-visible:saturate-[0.95]')
+            expect(image?.classList).toContain('group-focus-visible:blur-none')
             expect(image?.classList).toContain('motion-reduce:transition-none')
         }
     })

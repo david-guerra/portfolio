@@ -197,8 +197,8 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                             className="h-full w-full scale-[1.012] object-cover object-right brightness-[0.64] saturate-[0.82] blur-[0.45px] transition-[filter] motion-reduce:transition-none group-hover:brightness-[0.82] group-hover:saturate-[0.95] group-hover:blur-none group-focus-visible:brightness-[0.82] group-focus-visible:saturate-[0.95] group-focus-visible:blur-none"
                         />
                         <span className="absolute inset-0 bg-linear-to-r from-bg/[0.28] via-transparent via-50% to-transparent" />
-                        <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-bg px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[previous.accent]}`}>
-                            <span className="text-ink">{previous.title}</span>
+                        <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-[#0d0d0f] px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[previous.accent]}`}>
+                            <span className="text-[#f3e9d2]">{previous.title}</span>
                             <span className={ACCENT_TEXT[previous.accent]}>← Previous</span>
                         </span>
                     </button>
@@ -248,8 +248,8 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                             className="h-full w-full scale-[1.012] object-cover object-left brightness-[0.64] saturate-[0.82] blur-[0.45px] transition-[filter] motion-reduce:transition-none group-hover:brightness-[0.82] group-hover:saturate-[0.95] group-hover:blur-none group-focus-visible:brightness-[0.82] group-focus-visible:saturate-[0.95] group-focus-visible:blur-none"
                         />
                         <span className="absolute inset-0 bg-linear-to-l from-bg/[0.28] via-transparent via-50% to-transparent" />
-                        <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-bg px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[next.accent]}`}>
-                            <span className="text-ink">{next.title}</span>
+                        <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-[#0d0d0f] px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[next.accent]}`}>
+                            <span className="text-[#f3e9d2]">{next.title}</span>
                             <span className={ACCENT_TEXT[next.accent]}>Next →</span>
                         </span>
                     </button>
