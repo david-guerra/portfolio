@@ -68,8 +68,14 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
         return () => window.removeEventListener('resize', syncMobileDeck)
     }, [projectIndex])
 
-    const selectRelative = (delta: -1 | 1) => {
-        setProjectIndex((current) => (current + delta + PROJECTS.length) % PROJECTS.length)
+    const selectRelative = (delta: -1 | 1, syncMobileDeck = false) => {
+        const targetIndex = (projectIndex + delta + PROJECTS.length) % PROJECTS.length
+        setProjectIndex(targetIndex)
+        if (syncMobileDeck) {
+            const deck = mobileDeckRef.current
+            const step = Math.max(1, (deck?.clientWidth ?? 0) - 32)
+            deck?.scrollTo?.({ left: step * targetIndex })
+        }
     }
 
     const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -93,8 +99,8 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
             tabIndex={0}
             onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) return
-                if (event.key === 'ArrowLeft') selectRelative(-1)
-                if (event.key === 'ArrowRight') selectRelative(1)
+                if (event.key === 'ArrowLeft') selectRelative(-1, true)
+                if (event.key === 'ArrowRight') selectRelative(1, true)
             }}
             className="min-h-full px-5 py-8 outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-orange wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
         >

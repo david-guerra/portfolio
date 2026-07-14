@@ -215,14 +215,37 @@ describe('Projects section', () => {
         expect(within(deck).getAllByRole('article')).toHaveLength(3)
         expect(getByText('swipe to browse')).toBeTruthy()
 
+        const scrollTo = vi.fn()
         Object.defineProperty(deck, 'clientWidth', { configurable: true, value: 360 })
+        Object.defineProperty(deck, 'scrollTo', { configurable: true, value: scrollTo })
         fireEvent.scroll(deck, { target: { scrollLeft: 328 } })
         expect(getByText('02 / 03')).toBeTruthy()
         expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+        expect(scrollTo).not.toHaveBeenCalled()
 
         fireEvent.click(getByRole('button', { name: 'Show Fest' }))
         expect(getByText('03 / 03')).toBeTruthy()
         expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
+    })
+
+    test('scrolls the mobile deck when section keyboard navigation selects a project', () => {
+        const { container, getByRole, getByTestId, getByText } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const section = container.querySelector('#projects')
+        const deck = getByTestId('projects-mobile-deck')
+        const scrollTo = vi.fn()
+        expect(section).not.toBeNull()
+        Object.defineProperty(deck, 'clientWidth', { configurable: true, value: 393 })
+        Object.defineProperty(deck, 'scrollTo', { configurable: true, value: scrollTo })
+
+        fireEvent.keyDown(section as HTMLElement, { key: 'ArrowRight' })
+
+        expect(getByText('02 / 03')).toBeTruthy()
+        expect(getByRole('button', { name: 'Show CleanVoice' }).getAttribute('aria-pressed')).toBe(
+            'true',
+        )
+        expect(scrollTo).toHaveBeenCalledWith({ left: 361 })
     })
 
     test('syncs the mobile deck to the selected desktop project after a resize', () => {
