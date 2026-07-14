@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import Hero from './components/Hero.tsx'
 import SiteNav from './components/SiteNav.tsx'
 import AboutSection from './features/about/AboutSection.tsx'
+import ProjectsSection from './features/projects/ProjectsSection.tsx'
 import { activeSection, type NavSection } from './lib/sections.ts'
 import { resolveInitialTheme, toggleTheme, THEME_STORAGE_KEY, type Theme } from './lib/theme.ts'
 
@@ -70,13 +71,7 @@ export default function App() {
                     <Hero theme={theme} onScrollNext={() => scrollToSection('about')} />
                 </section>
                 <AboutSection onScrollNext={() => scrollToSection('projects')} />
-                <section
-                    id="projects"
-                    className="flex min-h-full flex-col justify-center px-5 wide:h-full wide:snap-start wide:snap-always wide:px-14"
-                >
-                    <p className="text-label uppercase text-muted">Projects</p>
-                    <p className="mt-4 text-body-mono text-dim">Under construction.</p>
-                </section>
+                <ProjectsSection onScrollNext={() => scrollToSection('arcade')} />
                 <section
                     id="arcade"
                     className="flex min-h-full flex-col justify-center px-5 wide:h-full wide:snap-start wide:snap-always wide:px-14"
