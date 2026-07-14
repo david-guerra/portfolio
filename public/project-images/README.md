@@ -26,3 +26,19 @@ from the finished application during the dedicated design pass.
 | `arcade-gallery-04-game-of-life.png` | Game of Life | **Placeholder** — generated from `myReference/gameoflife.png` |
 
 Placeholder ⇄ final status is tracked in this table; flip the row when you drop in a real image.
+
+## Gallery thumbnails
+
+Gallery thumbnail derivatives use the original basename plus `-thumbnail.png`. They are PNGs
+with a maximum dimension of 480px, generated from the corresponding full-resolution source with
+`sips -Z 480`. Keep the full-resolution originals for the selected gallery frame; do not overwrite
+them when regenerating thumbnails.
+
+| Thumbnail | Full-resolution source | Dimensions |
+| --- | --- | --- |
+| `arcade-gallery-01-hub-thumbnail.png` | `arcade-gallery-01-hub.png` | 480 × 300 |
+| `arcade-gallery-02-connect-four-thumbnail.png` | `arcade-gallery-02-connect-four.png` | 480 × 270 |
+| `arcade-gallery-03-sudoku-thumbnail.png` | `arcade-gallery-03-sudoku.png` | 480 × 300 |
+| `arcade-gallery-04-game-of-life-thumbnail.png` | `arcade-gallery-04-game-of-life.png` | 480 × 300 |
+| `applied-ai-carousel-thumbnail.png` | `applied-ai-carousel.png` | 480 × 270 |
+| `compiler-carousel-thumbnail.png` | `compiler-carousel.png` | 480 × 270 |
