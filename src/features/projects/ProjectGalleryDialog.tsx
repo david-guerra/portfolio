@@ -93,12 +93,13 @@ export default function ProjectGalleryDialog({
                         className="flex min-h-0 min-w-0 flex-col wide:border-r wide:border-border wide:pr-8"
                     >
                         <div
-                            className={`min-h-0 flex-1 overflow-hidden border bg-bg ${ACCENT_BORDER[project.accent]}`}
+                            data-testid="project-gallery-frame"
+                            className={`shrink-0 overflow-hidden border bg-bg ${ACCENT_BORDER[project.accent]}`}
                         >
                             <img
                                 src={image.image}
                                 alt={image.alt}
-                                className="h-full max-h-[48dvh] w-full object-contain wide:max-h-[50dvh]"
+                                className="block h-auto w-full object-contain"
                             />
                         </div>
 
