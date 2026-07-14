@@ -72,7 +72,7 @@ export default function ProjectGalleryDialog({
             }}
             className="m-auto h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none overflow-hidden border border-border bg-surface p-0 text-body backdrop:bg-bg/90 wide:h-auto wide:max-h-[86dvh] wide:w-[min(92vw,1220px)]"
         >
-            <div className="flex h-full min-h-0 flex-col p-4 wide:p-8">
+            <div className="flex h-full min-h-0 min-w-0 flex-col p-4 wide:p-8">
                 <div className="mb-4 flex shrink-0 justify-end">
                     <button
                         type="button"
@@ -84,8 +84,14 @@ export default function ProjectGalleryDialog({
                     </button>
                 </div>
 
-                <div className="grid min-h-0 flex-1 gap-6 wide:grid-cols-[minmax(0,2fr)_minmax(260px,0.9fr)] wide:gap-8">
-                    <div className="flex min-h-0 flex-col wide:border-r wide:border-border wide:pr-8">
+                <div
+                    data-testid="project-gallery-layout"
+                    className="grid min-h-0 min-w-0 flex-1 gap-6 wide:grid-cols-[minmax(0,2fr)_minmax(260px,0.9fr)] wide:gap-8"
+                >
+                    <div
+                        data-testid="project-gallery-media"
+                        className="flex min-h-0 min-w-0 flex-col wide:border-r wide:border-border wide:pr-8"
+                    >
                         <div
                             className={`min-h-0 flex-1 overflow-hidden border bg-bg ${ACCENT_BORDER[project.accent]}`}
                         >
@@ -156,7 +162,10 @@ export default function ProjectGalleryDialog({
                         </div>
                     </div>
 
-                    <div className="min-h-0 overflow-y-auto wide:py-8">
+                    <div
+                        data-testid="project-gallery-copy"
+                        className="min-h-0 min-w-0 overflow-y-auto wide:py-8"
+                    >
                         <p className={`text-label uppercase ${ACCENT_TEXT[project.accent]}`}>
                             {image.label}
                         </p>

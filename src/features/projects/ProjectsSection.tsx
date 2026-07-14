@@ -77,7 +77,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
             }}
             className="min-h-full px-5 py-8 outline-none wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
         >
-            <div className="mx-auto flex min-h-full w-full max-w-[1474px] flex-col">
+            <div className="mx-auto flex min-h-full w-full max-w-[1474px] flex-col wide:h-full wide:min-h-0">
                 <div className="flex flex-col justify-between gap-4 wide:flex-row wide:items-start">
                     <div>
                         <p className="text-label text-muted uppercase">PROJECTS</p>
@@ -184,7 +184,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                     data-testid="projects-desktop-content"
                     className="hidden min-h-0 flex-1 flex-col wide:flex"
                 >
-                    <div className="mt-7 flex min-h-[260px] flex-1 gap-0.5">
+                    <div className="mt-7 flex min-h-0 flex-1 gap-0.5 wide:min-h-[260px]">
                     <button
                         type="button"
                         aria-label={`Show previous project: ${previous.title}`}
@@ -214,7 +214,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                             if (!dragged.current) setGalleryProject(project)
                             dragged.current = false
                         }}
-                        className={`group relative min-w-0 flex-1 cursor-grab overflow-hidden border-y bg-surface active:cursor-grabbing ${ACCENT_BORDER[project.accent]} ${FOCUS_RING}`}
+                        className={`group relative min-h-0 min-w-0 flex-1 cursor-grab overflow-hidden border-y bg-surface active:cursor-grabbing ${ACCENT_BORDER[project.accent]} ${FOCUS_RING}`}
                     >
                         <img
                             src={project.carouselImage}

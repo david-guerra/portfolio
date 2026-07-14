@@ -8,7 +8,10 @@ vi.mock('../src/components/Hero.tsx', () => ({
     default: () => <div data-testid="hero-stub" />,
 }))
 
-afterEach(cleanup)
+afterEach(() => {
+    cleanup()
+    vi.unstubAllEnvs()
+})
 
 beforeEach(() => {
     HTMLDialogElement.prototype.showModal = function showModal() {
@@ -48,6 +51,18 @@ describe('Projects section', () => {
         expect(PROJECTS[2]?.description).toBe(
             'Rust and I didn’t quite click, so I did the sensible thing and started designing a language in C++. Fest currently has a full specification and a working lexer; the goal is a statically typed language targeting WebAssembly.',
         )
+    })
+
+    test('resolves every public image through the configured Vite base path', async () => {
+        vi.stubEnv('BASE_URL', '/portfolio/')
+        vi.resetModules()
+        const { PROJECTS: basedProjects } = await import('../src/features/projects/projects.ts')
+        const images = basedProjects.flatMap((project) => [
+            project.carouselImage,
+            ...project.gallery.map((item) => item.image),
+        ])
+
+        expect(images.every((image) => image.startsWith('/portfolio/project-images/'))).toBe(true)
     })
 
     test('leads with the approved Arcade project and exact copy', () => {
@@ -124,6 +139,18 @@ describe('Projects section', () => {
         expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
     })
 
+    test('constrains the desktop flex column so the project footer stays in its pane', () => {
+        const { section, projects } = renderProjects()
+        const inner = section.firstElementChild
+        const desktop = projects.getByTestId('projects-desktop-content')
+        const mediaRail = desktop.firstElementChild
+
+        expect(inner).not.toBeNull()
+        expect(inner?.classList.contains('wide:h-full')).toBe(true)
+        expect(inner?.classList.contains('wide:min-h-0')).toBe(true)
+        expect(mediaRail?.classList.contains('min-h-0')).toBe(true)
+    })
+
     test('opens the truthful gallery, switches and wraps frames, and closes both ways', () => {
         const onScrollNext = vi.fn()
         const { getByRole, queryByRole } = render(
@@ -134,6 +161,9 @@ describe('Projects section', () => {
         let dialog = getByRole('dialog')
         let gallery = within(dialog)
 
+        expect(gallery.getByTestId('project-gallery-layout').classList).toContain('min-w-0')
+        expect(gallery.getByTestId('project-gallery-media').classList).toContain('min-w-0')
+        expect(gallery.getByTestId('project-gallery-copy').classList).toContain('min-w-0')
         expect(gallery.getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
         expect(gallery.getByText('01 / 04')).toBeTruthy()
         expect(
