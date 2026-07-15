@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import ProjectGalleryDialog from './ProjectGalleryDialog.tsx'
 import { PROJECTS, type Project, type ProjectAccent } from './projects.ts'
 
@@ -23,16 +23,22 @@ const ACCENT_BORDER: Record<ProjectAccent, string> = {
     orange: 'border-orange',
 }
 
-const ACCENT_BORDER_LEFT: Record<ProjectAccent, string> = {
-    teal: 'border-l-teal',
-    lavender: 'border-l-lavender',
-    orange: 'border-l-orange',
+const DESKTOP_RAIL_COPIES = [
+    { key: 'leading', index: 0, isAccessible: false },
+    { key: 'middle', index: 1, isAccessible: true },
+    { key: 'trailing', index: 2, isAccessible: false },
+] as const
+const DESKTOP_CARDS_PER_VIEW = 3
+const DESKTOP_RECENTER_DELAY = 120
+const DESKTOP_MIDDLE_COPY_INDEX = 1
+const DESKTOP_TRAILING_COPY_INDEX = 2
+
+function desktopCardWidth(rail: HTMLDivElement) {
+    return rail.clientWidth / DESKTOP_CARDS_PER_VIEW
 }
 
-const ACCENT_BORDER_RIGHT: Record<ProjectAccent, string> = {
-    teal: 'border-r-teal',
-    lavender: 'border-r-lavender',
-    orange: 'border-r-orange',
+function centeredCardScrollLeft(renderedIndex: number, cardWidth: number) {
+    return (renderedIndex - 1) * cardWidth
 }
 
 interface ArrowIconProps {
@@ -61,28 +67,96 @@ export interface ProjectsSectionProps {
 export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) {
     const [projectIndex, setProjectIndex] = useState(0)
     const [galleryProject, setGalleryProject] = useState<Project | null>(null)
-    const dragStartX = useRef<number | null>(null)
+    const projectIndexRef = useRef(0)
+    const dragStart = useRef<{ clientX: number; scrollLeft: number } | null>(null)
     const dragged = useRef(false)
     const mobileDeckRef = useRef<HTMLDivElement>(null)
+    const desktopRailRef = useRef<HTMLDivElement>(null)
+    const desktopScrollEndTimer = useRef<number | null>(null)
+    const desktopRenderedIndexRef = useRef(PROJECTS.length * DESKTOP_MIDDLE_COPY_INDEX)
     const project = PROJECTS[projectIndex]
-    const previous = PROJECTS[(projectIndex - 1 + PROJECTS.length) % PROJECTS.length]
-    const next = PROJECTS[(projectIndex + 1) % PROJECTS.length]
 
-    useEffect(() => {
-        const syncMobileDeck = () => {
-            const deck = mobileDeckRef.current
-            if (!deck) return
-            const step = Math.max(1, deck.clientWidth - 32)
-            deck.scrollTo?.({ left: step * projectIndex })
+    const selectProject = (index: number) => {
+        projectIndexRef.current = index
+        setProjectIndex(index)
+    }
+
+    const prefersReducedMotion = () =>
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+
+    const scrollToRenderedCard = (
+        renderedIndex: number,
+        behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth',
+    ) => {
+        const rail = desktopRailRef.current
+        if (!rail) return false
+        const cardWidth = desktopCardWidth(rail)
+        if (!cardWidth) return false
+        desktopRenderedIndexRef.current = renderedIndex
+        rail.scrollTo?.({
+            left: centeredCardScrollLeft(renderedIndex, cardWidth),
+            behavior,
+        })
+        return true
+    }
+
+    const scrollToProject = (
+        index: number,
+        behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth',
+    ) => {
+        const didScroll = scrollToRenderedCard(
+            PROJECTS.length * DESKTOP_MIDDLE_COPY_INDEX + index,
+            behavior,
+        )
+        if (!didScroll) selectProject(index)
+    }
+
+    useLayoutEffect(() => {
+        const syncDesktopRail = () => {
+            const rail = desktopRailRef.current
+            if (!rail) return
+            const cardWidth = rail.clientWidth / DESKTOP_CARDS_PER_VIEW
+            if (!cardWidth) return
+            const renderedIndex =
+                PROJECTS.length * DESKTOP_MIDDLE_COPY_INDEX + projectIndexRef.current
+            desktopRenderedIndexRef.current = renderedIndex
+            rail.scrollTo?.({
+                left: centeredCardScrollLeft(renderedIndex, cardWidth),
+                behavior: 'auto',
+            })
         }
 
-        window.addEventListener('resize', syncMobileDeck)
-        return () => window.removeEventListener('resize', syncMobileDeck)
-    }, [projectIndex])
+        const syncRails = () => {
+            const deck = mobileDeckRef.current
+            if (deck) {
+                const step = Math.max(1, deck.clientWidth - 32)
+                deck.scrollTo?.({ left: step * projectIndexRef.current })
+            }
+            syncDesktopRail()
+        }
+
+        syncDesktopRail()
+        window.addEventListener('resize', syncRails)
+        return () => {
+            window.removeEventListener('resize', syncRails)
+            if (desktopScrollEndTimer.current !== null) {
+                window.clearTimeout(desktopScrollEndTimer.current)
+            }
+        }
+    }, [])
 
     const selectRelative = (delta: -1 | 1, syncMobileDeck = false) => {
-        const targetIndex = (projectIndex + delta + PROJECTS.length) % PROJECTS.length
-        setProjectIndex(targetIndex)
+        const renderedProjectIndex =
+            ((desktopRenderedIndexRef.current % PROJECTS.length) + PROJECTS.length) %
+            PROJECTS.length
+        const currentRenderedIndex =
+            renderedProjectIndex === projectIndexRef.current
+                ? desktopRenderedIndexRef.current
+                : PROJECTS.length * DESKTOP_MIDDLE_COPY_INDEX + projectIndexRef.current
+        const targetRenderedIndex = currentRenderedIndex + delta
+        const targetIndex =
+            ((targetRenderedIndex % PROJECTS.length) + PROJECTS.length) % PROJECTS.length
+        if (!scrollToRenderedCard(targetRenderedIndex)) selectProject(targetIndex)
         if (syncMobileDeck) {
             const deck = mobileDeckRef.current
             const step = Math.max(1, (deck?.clientWidth ?? 0) - 32)
@@ -90,18 +164,61 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
         }
     }
 
-    const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
-        const start = dragStartX.current
-        dragStartX.current = null
+    const recenterDesktopRail = (rail: HTMLDivElement) => {
+        const cardWidth = desktopCardWidth(rail)
+        if (!cardWidth) return
+        const renderedIndex = Math.round(rail.scrollLeft / cardWidth) + 1
+        let middleRenderedIndex = renderedIndex
+
+        if (renderedIndex < PROJECTS.length * DESKTOP_MIDDLE_COPY_INDEX) {
+            middleRenderedIndex += PROJECTS.length
+        } else if (renderedIndex >= PROJECTS.length * DESKTOP_TRAILING_COPY_INDEX) {
+            middleRenderedIndex -= PROJECTS.length
+        } else {
+            return
+        }
+
+        rail.scrollTo?.({
+            left: centeredCardScrollLeft(middleRenderedIndex, cardWidth),
+            behavior: 'auto',
+        })
+        desktopRenderedIndexRef.current = middleRenderedIndex
+    }
+
+    const scheduleDesktopRecenter = (rail: HTMLDivElement) => {
+        if (desktopScrollEndTimer.current !== null) {
+            window.clearTimeout(desktopScrollEndTimer.current)
+            desktopScrollEndTimer.current = null
+        }
+        if (dragStart.current) return
+
+        desktopScrollEndTimer.current = window.setTimeout(() => {
+            if (!dragStart.current) recenterDesktopRail(rail)
+            desktopScrollEndTimer.current = null
+        }, DESKTOP_RECENTER_DELAY)
+    }
+
+    const handleDesktopScroll = (rail: HTMLDivElement) => {
+        const cardWidth = desktopCardWidth(rail)
+        if (!cardWidth) return
+        const renderedIndex = Math.max(
+            0,
+            Math.min(
+                PROJECTS.length * DESKTOP_RAIL_COPIES.length - 1,
+                Math.round(rail.scrollLeft / cardWidth) + 1,
+            ),
+        )
+        desktopRenderedIndexRef.current = renderedIndex
+        selectProject(renderedIndex % PROJECTS.length)
+        scheduleDesktopRecenter(rail)
+    }
+
+    const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+        dragStart.current = null
         if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
             event.currentTarget.releasePointerCapture?.(event.pointerId)
         }
-        if (start === null) return
-
-        const distance = start - event.clientX
-        if (Math.abs(distance) < 48) return
-        dragged.current = true
-        selectRelative(distance > 0 ? 1 : -1)
+        scheduleDesktopRecenter(event.currentTarget)
     }
 
     return (
@@ -116,7 +233,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
             }}
             className="min-h-full px-5 py-8 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-orange wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
         >
-            <div className="mx-auto flex min-h-full w-full max-w-[1474px] flex-col wide:h-full wide:min-h-0">
+            <div className="mx-auto flex min-h-full w-full max-w-[1800px] flex-col wide:h-full wide:min-h-0">
                 <div className="flex flex-col justify-between gap-4 wide:flex-row wide:items-start">
                     <div>
                         <p className="text-label text-muted uppercase">PROJECTS</p>
@@ -126,7 +243,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         </p>
                         <p className="mt-1 text-meta text-muted">
                             <span className="wide:hidden">swipe to browse</span>
-                            <span className="hidden wide:inline">drag or use arrows</span>
+                            <span className="hidden wide:inline">scroll, drag, or use arrows</span>
                         </p>
                     </div>
                     <p className="max-w-[520px] text-body-mono text-dim wide:text-right">
@@ -143,7 +260,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                             0,
                             Math.min(PROJECTS.length - 1, Math.round(event.currentTarget.scrollLeft / step)),
                         )
-                        setProjectIndex(index)
+                        selectProject(index)
                     }}
                     className="-mx-5 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] wide:hidden [&::-webkit-scrollbar]:hidden"
                 >
@@ -210,7 +327,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                             aria-label={`Show ${item.title}`}
                             aria-pressed={index === projectIndex}
                             onClick={() => {
-                                setProjectIndex(index)
+                                selectProject(index)
                                 const deck = mobileDeckRef.current
                                 const step = Math.max(1, (deck?.clientWidth ?? 0) - 32)
                                 deck?.scrollTo?.({ left: step * index })
@@ -226,90 +343,164 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                     data-testid="projects-desktop-content"
                     className="hidden min-h-0 flex-1 flex-col wide:flex"
                 >
-                    <div className="mt-7 flex min-h-0 flex-1 gap-0 wide:min-h-[260px]">
-                    <button
-                        type="button"
-                        aria-label={`Show previous project: ${previous.title}`}
-                        onClick={() => selectRelative(-1)}
-                        className={`group relative hidden w-[clamp(190px,18vw,270px)] shrink-0 cursor-pointer overflow-hidden rounded-l-card border-y border-y-border border-l wide:block ${ACCENT_BORDER_LEFT[previous.accent]} ${FOCUS_RING}`}
-                    >
-                        <img
-                            src={previous.carouselImage}
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full scale-[1.012] object-cover object-right brightness-[0.64] saturate-[0.82] blur-[0.45px] transition-[filter] motion-reduce:transition-none group-hover:brightness-[0.82] group-hover:saturate-[0.95] group-hover:blur-none group-focus-visible:brightness-[0.82] group-focus-visible:saturate-[0.95] group-focus-visible:blur-none"
-                        />
-                        <span className="absolute inset-0 bg-linear-to-r from-bg/[0.28] via-transparent via-50% to-transparent" />
-                        <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-[#0d0d0f] px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[previous.accent]}`}>
-                            <span className="text-[#f3e9d2]">{previous.title}</span>
-                            <span className={ACCENT_TEXT_ON_DARK[previous.accent]}>← Previous</span>
-                        </span>
-                    </button>
-
-                    <button
-                        type="button"
-                        aria-label={`Open ${project.title} gallery`}
+                    <div
+                        ref={desktopRailRef}
+                        data-testid="projects-desktop-rail"
+                        onScroll={(event) => handleDesktopScroll(event.currentTarget)}
                         onPointerDown={(event) => {
+                            if (event.button !== 0) return
+                            if (desktopScrollEndTimer.current !== null) {
+                                window.clearTimeout(desktopScrollEndTimer.current)
+                                desktopScrollEndTimer.current = null
+                            }
                             dragged.current = false
-                            dragStartX.current = event.clientX
-                            event.currentTarget.setPointerCapture?.(event.pointerId)
+                            dragStart.current = {
+                                clientX: event.clientX,
+                                scrollLeft: event.currentTarget.scrollLeft,
+                            }
+                        }}
+                        onPointerMove={(event) => {
+                            const start = dragStart.current
+                            if (!start) return
+                            const distance = start.clientX - event.clientX
+                            if (Math.abs(distance) > 6 && !dragged.current) {
+                                dragged.current = true
+                                event.currentTarget.setPointerCapture?.(event.pointerId)
+                            }
+                            event.currentTarget.scrollLeft = start.scrollLeft + distance
                         }}
                         onPointerUp={finishDrag}
                         onPointerCancel={(event) => {
-                            if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
-                                event.currentTarget.releasePointerCapture?.(event.pointerId)
-                            }
-                            dragStartX.current = null
+                            finishDrag(event)
                             dragged.current = false
                         }}
-                        onLostPointerCapture={() => {
-                            dragStartX.current = null
+                        onLostPointerCapture={(event) => {
+                            dragStart.current = null
+                            scheduleDesktopRecenter(event.currentTarget)
                         }}
-                        onClick={() => {
-                            if (!dragged.current) setGalleryProject(project)
-                            dragged.current = false
-                        }}
-                        className={`group relative z-10 min-h-0 min-w-0 flex-1 cursor-grab overflow-hidden border bg-surface shadow-[0_0_0_3px_rgba(13,13,15,0.72)] active:cursor-grabbing ${ACCENT_BORDER[project.accent]} ${FOCUS_RING}`}
+                        className="mt-7 flex min-h-0 shrink-0 snap-x snap-mandatory overflow-x-auto rounded-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden cursor-grab active:cursor-grabbing"
                     >
-                        <img
-                            src={project.carouselImage}
-                            alt={project.carouselAlt}
-                            draggable="false"
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full object-cover"
-                        />
-                        <span
-                            className={`absolute top-4 left-5 rounded-chip bg-bg/80 px-2.5 py-1 text-xs tracking-[0.12em] uppercase ${ACCENT_TEXT[project.accent]}`}
-                        >
-                            {project.tag}
-                        </span>
-                        <span className="absolute right-5 bottom-4 rounded-chip bg-bg/80 px-2.5 py-1 text-xs text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                            click to preview
-                        </span>
-                    </button>
+                        {DESKTOP_RAIL_COPIES.flatMap((copy) =>
+                            PROJECTS.map((item, itemIndex) => {
+                                const renderedIndex = copy.index * PROJECTS.length + itemIndex
+                                const isSelected = itemIndex === projectIndex
+                                const isAccessibleCopy = copy.isAccessible
+                                const cardClassName = `group relative aspect-[1672/941] min-h-0 [flex:0_0_33.333333%] snap-center cursor-pointer overflow-hidden border bg-surface ${
+                                    isSelected
+                                        ? `z-10 shadow-[0_0_0_3px_rgba(13,13,15,0.72)] ${ACCENT_BORDER[item.accent]}`
+                                        : 'border-border'
+                                } ${FOCUS_RING}`
+                                const handleCardClick = () => {
+                                    if (dragged.current) {
+                                        dragged.current = false
+                                        return
+                                    }
+                                    if (
+                                        renderedIndex === desktopRenderedIndexRef.current &&
+                                        itemIndex === projectIndexRef.current
+                                    ) {
+                                        setGalleryProject(item)
+                                        return
+                                    }
+                                    if (!scrollToRenderedCard(renderedIndex)) {
+                                        selectProject(itemIndex)
+                                    }
+                                }
+                                const cardContent = (
+                                    <>
+                                        <img
+                                            src={item.carouselImage}
+                                            alt={isAccessibleCopy ? item.carouselAlt : ''}
+                                            draggable="false"
+                                            loading="lazy"
+                                            decoding="async"
+                                            className={`h-full w-full object-cover transition-[filter] motion-reduce:transition-none ${
+                                                isSelected
+                                                    ? 'brightness-100 saturate-100'
+                                                    : 'brightness-[0.64] saturate-[0.82] blur-[0.45px] group-hover:brightness-[0.82] group-hover:saturate-[0.95] group-hover:blur-none group-focus-visible:brightness-[0.82] group-focus-visible:saturate-[0.95] group-focus-visible:blur-none'
+                                            }`}
+                                        />
+                                        {isSelected ? (
+                                            <span
+                                                className={`absolute top-4 left-5 rounded-chip bg-bg/80 px-2.5 py-1 text-xs tracking-[0.12em] uppercase ${ACCENT_TEXT[item.accent]}`}
+                                            >
+                                                {item.tag}
+                                            </span>
+                                        ) : null}
+                                        <span
+                                            className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-[#0d0d0f] px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[item.accent]}`}
+                                        >
+                                            <span className="text-[#f3e9d2]">{item.title}</span>
+                                            <span className={ACCENT_TEXT_ON_DARK[item.accent]}>
+                                                {isSelected ? 'Selected' : 'View project →'}
+                                            </span>
+                                        </span>
+                                    </>
+                                )
 
-                    <button
-                        type="button"
-                        aria-label={`Show next project: ${next.title}`}
-                        onClick={() => selectRelative(1)}
-                        className={`group relative hidden w-[clamp(190px,18vw,270px)] shrink-0 cursor-pointer overflow-hidden rounded-r-card border-y border-y-border border-r wide:block ${ACCENT_BORDER_RIGHT[next.accent]} ${FOCUS_RING}`}
-                    >
-                        <img
-                            src={next.carouselImage}
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full scale-[1.012] object-cover object-left brightness-[0.64] saturate-[0.82] blur-[0.45px] transition-[filter] motion-reduce:transition-none group-hover:brightness-[0.82] group-hover:saturate-[0.95] group-hover:blur-none group-focus-visible:brightness-[0.82] group-focus-visible:saturate-[0.95] group-focus-visible:blur-none"
-                        />
-                        <span className="absolute inset-0 bg-linear-to-l from-bg/[0.28] via-transparent via-50% to-transparent" />
-                        <span className={`absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 border-b bg-[#0d0d0f] px-2.5 py-2 text-[0.6875rem] ${ACCENT_BORDER[next.accent]}`}>
-                            <span className="text-[#f3e9d2]">{next.title}</span>
-                            <span className={ACCENT_TEXT_ON_DARK[next.accent]}>Next →</span>
-                        </span>
-                    </button>
+                                if (!isAccessibleCopy) {
+                                    return (
+                                        <div
+                                            key={`${copy.key}-${item.title}`}
+                                            data-project-card=""
+                                            data-project-index={itemIndex}
+                                            data-rail-copy={copy.key}
+                                            aria-hidden="true"
+                                            onClick={handleCardClick}
+                                            className={cardClassName}
+                                        >
+                                            {cardContent}
+                                        </div>
+                                    )
+                                }
+
+                                return (
+                                    <button
+                                        key={`${copy.key}-${item.title}`}
+                                        type="button"
+                                        data-project-card=""
+                                        data-project-index={itemIndex}
+                                        data-rail-copy={copy.key}
+                                        aria-label={
+                                            isSelected
+                                                ? `Open ${item.title} gallery`
+                                                : `Center project: ${item.title}`
+                                        }
+                                        aria-current={isSelected ? 'true' : undefined}
+                                        onClick={handleCardClick}
+                                        className={cardClassName}
+                                    >
+                                        {cardContent}
+                                    </button>
+                                )
+                            }),
+                        )}
                     </div>
+
+                    <nav
+                        aria-label="Project index"
+                        className="flex shrink-0 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    >
+                        {PROJECTS.map((item, index) => (
+                            <button
+                                key={item.title}
+                                type="button"
+                                aria-label={`Select project: ${item.title}`}
+                                aria-pressed={index === projectIndex}
+                                onClick={() => scrollToProject(index)}
+                                className={`min-w-[180px] flex-1 cursor-pointer border-r border-border px-4 py-3 text-left text-xs last:border-r-0 ${
+                                    index === projectIndex
+                                        ? `bg-surface ${ACCENT_TEXT[item.accent]}`
+                                        : 'text-dim hover:text-ink'
+                                } ${FOCUS_RING}`}
+                            >
+                                <span className="mr-2 text-[0.625rem] text-muted">
+                                    {String(index + 1).padStart(2, '0')}
+                                </span>
+                                {item.title}
+                            </button>
+                        ))}
+                    </nav>
 
                     <div className="shrink-0 py-5 wide:max-w-[760px]">
                     <h2 id="projects-heading" className="text-heading text-ink">
@@ -342,7 +533,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                     </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center justify-between border-t border-border py-3 text-sm text-lavender">
+                    <div className="mt-auto flex shrink-0 items-center justify-between border-t border-border py-3 text-sm text-lavender">
                     <button
                         type="button"
                         onClick={() => selectRelative(-1)}
