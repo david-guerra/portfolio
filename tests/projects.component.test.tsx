@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import App from '../src/App.tsx'
 import { PROJECTS } from '../src/features/projects/projects.ts'
@@ -11,6 +11,7 @@ vi.mock('../src/components/Hero.tsx', () => ({
 afterEach(() => {
     cleanup()
     vi.unstubAllEnvs()
+    vi.useRealTimers()
 })
 
 beforeEach(() => {
@@ -86,7 +87,11 @@ describe('Projects section', () => {
         expect(
             desktop.getByRole('heading', { level: 2, name: 'Arcade, compiled' }),
         ).toBeTruthy()
-        expect(desktop.getAllByText('C · WebAssembly')).toHaveLength(2)
+        expect(
+            within(desktop.getByRole('button', { name: 'Open Arcade, compiled gallery' })).getByText(
+                'C · WebAssembly',
+            ),
+        ).toBeTruthy()
         expect(desktop.getByText('Shipped')).toBeTruthy()
         expect(
             desktop.getByText(
@@ -95,7 +100,7 @@ describe('Projects section', () => {
         ).toBeTruthy()
     })
 
-    test('wraps with buttons and arrows, responds to drag, and delegates Arcade navigation', () => {
+    test('wraps with footer buttons and arrows and delegates Arcade navigation', () => {
         const onScrollNext = vi.fn()
         const { container, getByRole, getByText } = render(
             <ProjectsSection onScrollNext={onScrollNext} />,
@@ -114,112 +119,169 @@ describe('Projects section', () => {
         fireEvent.keyDown(section as HTMLElement, { key: 'ArrowRight' })
         expect(getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
 
-        const preview = getByRole('button', { name: 'Open Arcade, compiled gallery' })
-        fireEvent.pointerDown(preview, { clientX: 400, pointerId: 1 })
-        fireEvent.pointerUp(preview, { clientX: 250, pointerId: 1 })
-        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
-
         fireEvent.click(getByRole('button', { name: 'Previous project' }))
+        expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
+        fireEvent.click(getByRole('button', { name: 'Next project' }))
         fireEvent.click(getByRole('button', { name: 'Play in Arcade ↓' }))
         expect(onScrollNext).toHaveBeenCalledOnce()
     })
 
-    test('captures the center-card pointer so a desktop drag completes off the original hit area', () => {
-        const { getByRole, queryByRole } = render(
+    test('captures the desktop rail pointer so dragging continues off the original card', () => {
+        const { getByRole, getByTestId, queryByRole } = render(
             <ProjectsSection onScrollNext={() => undefined} />,
         )
+        const rail = getByTestId('projects-desktop-rail')
         const preview = getByRole('button', { name: 'Open Arcade, compiled gallery' })
         const setPointerCapture = vi.fn()
         const hasPointerCapture = vi.fn(() => true)
         const releasePointerCapture = vi.fn()
-        Object.defineProperties(preview, {
+        Object.defineProperties(rail, {
+            scrollLeft: { configurable: true, writable: true, value: 600 },
             setPointerCapture: { configurable: true, value: setPointerCapture },
             hasPointerCapture: { configurable: true, value: hasPointerCapture },
             releasePointerCapture: { configurable: true, value: releasePointerCapture },
         })
 
-        fireEvent.pointerDown(preview, { clientX: 300, pointerId: 7 })
-        expect(setPointerCapture).toHaveBeenCalledWith(7)
+        fireEvent.pointerDown(rail, { clientX: 300, pointerId: 7 })
+        expect(setPointerCapture).not.toHaveBeenCalled()
 
-        fireEvent.pointerUp(preview, { clientX: 100, pointerId: 7 })
+        fireEvent.pointerMove(rail, { clientX: 100, pointerId: 7 })
+        expect(rail.scrollLeft).toBe(800)
+        expect(setPointerCapture).toHaveBeenCalledWith(7)
+        fireEvent.pointerUp(rail, { clientX: 100, pointerId: 7 })
         fireEvent.click(preview)
 
         expect(hasPointerCapture).toHaveBeenCalledWith(7)
         expect(releasePointerCapture).toHaveBeenCalledWith(7)
-        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
         expect(queryByRole('dialog')).toBeNull()
     })
 
-    test('keeps desktop neighbor projects wide, dark, and visibly labeled in every theme', () => {
+    test('renders a native-ratio scroll rail with exactly three cards per viewport and a direct index', () => {
         const { getByRole, getByTestId } = render(
             <ProjectsSection onScrollNext={() => undefined} />,
         )
-        const desktop = getByTestId('projects-desktop-content')
-        const rail = desktop.firstElementChild
-        const previous = getByRole('button', { name: 'Show previous project: Fest' })
+        const rail = getByTestId('projects-desktop-rail')
+        const desktop = within(getByTestId('projects-desktop-content'))
+        const projectIndex = getByRole('navigation', { name: 'Project index' })
+        const cards = rail.querySelectorAll('[data-project-card]')
         const selected = getByRole('button', { name: 'Open Arcade, compiled gallery' })
-        const next = getByRole('button', { name: 'Show next project: CleanVoice' })
-        const previousImage = previous.querySelector('img')
-        const nextImage = next.querySelector('img')
+        const inactive = getByRole('button', { name: 'Center project: CleanVoice' })
 
-        expect(rail).not.toBeNull()
-        expect(rail?.classList).toContain('gap-0')
-        expect(rail?.classList).not.toContain('gap-0.5')
-        expect(previous.classList).toContain('w-[clamp(190px,18vw,270px)]')
-        expect(next.classList).toContain('w-[clamp(190px,18vw,270px)]')
-        expect(previous.classList).toContain('border-y')
-        expect(previous.classList).toContain('border-y-border')
-        expect(previous.classList).toContain('border-l')
-        expect(previous.classList).toContain('border-l-orange')
-        expect(previous.classList).not.toContain('border')
-        expect(next.classList).toContain('border-y')
-        expect(next.classList).toContain('border-y-border')
-        expect(next.classList).toContain('border-r')
-        expect(next.classList).toContain('border-r-lavender')
-        expect(next.classList).not.toContain('border')
+        expect(rail.classList).toContain('snap-x')
+        expect(rail.classList).toContain('snap-mandatory')
+        expect(rail.classList).toContain('overflow-x-auto')
+        expect(rail.classList).not.toContain('wide:min-h-[260px]')
+        expect(cards).toHaveLength(PROJECTS.length * 3)
+        for (const card of cards) {
+            expect(card.classList).toContain('[flex:0_0_33.333333%]')
+            expect(card.classList).toContain('aspect-[1672/941]')
+            expect(card.classList).toContain('snap-center')
+        }
         expect(selected.classList).toContain('border')
         expect(selected.classList).toContain('border-teal')
         expect(selected.classList).toContain('z-10')
-        expect(selected.classList).toContain('shadow-[0_0_0_3px_rgba(13,13,15,0.72)]')
-        expect(selected.classList).not.toContain('border-y')
-        const previousTitle = within(previous).getByText('Fest')
-        const nextTitle = within(next).getByText('CleanVoice')
-        const previousDirection = within(previous).getByText('← Previous')
-        const nextDirection = within(next).getByText('Next →')
+        expect(inactive.querySelector('img')?.classList).toContain('brightness-[0.64]')
+        expect(within(inactive).getByText('CleanVoice')).toBeTruthy()
+        expect(within(inactive).getByText('View project →')).toBeTruthy()
+        expect(rail.querySelector('[data-rail-copy="leading"]')?.tagName).toBe('DIV')
+        expect(rail.querySelector('[data-rail-copy="middle"]')?.tagName).toBe('BUTTON')
+        expect(rail.querySelector('[data-rail-copy="trailing"]')?.tagName).toBe('DIV')
 
-        expect(previousTitle).toBeTruthy()
-        expect(previousDirection).toBeTruthy()
-        expect(nextTitle).toBeTruthy()
-        expect(nextDirection).toBeTruthy()
+        const scrollTo = vi.fn()
+        Object.defineProperties(rail, {
+            clientWidth: { configurable: true, value: 900 },
+            scrollLeft: { configurable: true, writable: true, value: 600 },
+            scrollTo: { configurable: true, value: scrollTo },
+        })
+        fireEvent.click(within(projectIndex).getByRole('button', { name: 'Select project: Fest' }))
 
-        expect(previousDirection.classList).toContain('text-[#e8734a]')
-        expect(previousDirection.classList).not.toContain('text-orange')
-        expect(nextDirection.classList).toContain('text-[#a48ef0]')
-        expect(nextDirection.classList).not.toContain('text-lavender')
+        expect(desktop.getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
+        expect(scrollTo).toHaveBeenCalledWith({ left: 1200, behavior: 'smooth' })
 
-        for (const title of [previousTitle, nextTitle]) {
-            const labelChip = title.parentElement
+        rail.scrollLeft = 1200
+        fireEvent.scroll(rail)
+        expect(desktop.getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
+        expect(
+            within(projectIndex)
+                .getByRole('button', { name: 'Select project: Fest' })
+                .getAttribute('aria-pressed'),
+        ).toBe('true')
+    })
 
-            expect(labelChip).not.toBeNull()
-            expect(labelChip?.classList).toContain('bg-[#0d0d0f]')
-            expect(labelChip?.classList).not.toContain('bg-bg')
-            expect(title.classList).toContain('text-[#f3e9d2]')
-            expect(title.classList).not.toContain('text-ink')
-        }
+    test('moves one physical card in the requested direction across both wrap boundaries', () => {
+        vi.useFakeTimers()
+        const { getByRole, getByTestId } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const rail = getByTestId('projects-desktop-rail')
+        const scrollTo = vi.fn()
+        Object.defineProperties(rail, {
+            clientWidth: { configurable: true, value: 900 },
+            scrollLeft: { configurable: true, writable: true, value: 600 },
+            scrollTo: { configurable: true, value: scrollTo },
+        })
 
-        for (const image of [previousImage, nextImage]) {
-            expect(image).not.toBeNull()
-            expect(image?.classList).toContain('brightness-[0.64]')
-            expect(image?.classList).toContain('saturate-[0.82]')
-            expect(image?.classList).toContain('blur-[0.45px]')
-            expect(image?.classList).toContain('group-hover:brightness-[0.82]')
-            expect(image?.classList).toContain('group-hover:saturate-[0.95]')
-            expect(image?.classList).toContain('group-hover:blur-none')
-            expect(image?.classList).toContain('group-focus-visible:brightness-[0.82]')
-            expect(image?.classList).toContain('group-focus-visible:saturate-[0.95]')
-            expect(image?.classList).toContain('group-focus-visible:blur-none')
-            expect(image?.classList).toContain('motion-reduce:transition-none')
-        }
+        fireEvent.click(getByRole('button', { name: 'Previous project' }))
+        expect(scrollTo).toHaveBeenLastCalledWith({ left: 300, behavior: 'smooth' })
+
+        rail.scrollLeft = 300
+        fireEvent.scroll(rail)
+        act(() => vi.advanceTimersByTime(160))
+        expect(scrollTo).toHaveBeenLastCalledWith({ left: 1200, behavior: 'auto' })
+
+        scrollTo.mockClear()
+        fireEvent.click(getByRole('button', { name: 'Next project' }))
+        expect(scrollTo).toHaveBeenLastCalledWith({ left: 1500, behavior: 'smooth' })
+    })
+
+    test('recenters equivalent cards invisibly after scrolling through either repeated end', () => {
+        vi.useFakeTimers()
+        const { getByRole, getByTestId } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const rail = getByTestId('projects-desktop-rail')
+        const scrollTo = vi.fn()
+        Object.defineProperties(rail, {
+            clientWidth: { configurable: true, value: 900 },
+            scrollLeft: { configurable: true, writable: true, value: 300 },
+            scrollTo: { configurable: true, value: scrollTo },
+        })
+
+        fireEvent.scroll(rail)
+        expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
+        act(() => vi.advanceTimersByTime(160))
+        expect(scrollTo).toHaveBeenLastCalledWith({ left: 1200, behavior: 'auto' })
+
+        scrollTo.mockClear()
+        rail.scrollLeft = 1500
+        fireEvent.scroll(rail)
+        expect(getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
+        act(() => vi.advanceTimersByTime(160))
+        expect(scrollTo).toHaveBeenLastCalledWith({ left: 600, behavior: 'auto' })
+    })
+
+    test('does not recenter a repeated rail while a pointer drag is still active', () => {
+        vi.useFakeTimers()
+        const { getByTestId } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const rail = getByTestId('projects-desktop-rail')
+        const scrollTo = vi.fn()
+        Object.defineProperties(rail, {
+            clientWidth: { configurable: true, value: 900 },
+            scrollLeft: { configurable: true, writable: true, value: 300 },
+            scrollTo: { configurable: true, value: scrollTo },
+            hasPointerCapture: { configurable: true, value: () => false },
+        })
+
+        fireEvent.pointerDown(rail, { clientX: 300, pointerId: 8 })
+        fireEvent.scroll(rail)
+        act(() => vi.advanceTimersByTime(160))
+        expect(scrollTo).not.toHaveBeenCalled()
+
+        fireEvent.pointerUp(rail, { clientX: 300, pointerId: 8 })
+        act(() => vi.advanceTimersByTime(160))
+        expect(scrollTo).toHaveBeenLastCalledWith({ left: 1200, behavior: 'auto' })
     })
 
     test('provides the approved mobile edge-peek deck with synced counter and dots', () => {
@@ -289,7 +351,7 @@ describe('Projects section', () => {
         )
         const carouselImages = container.querySelectorAll('#projects img')
 
-        expect(carouselImages).toHaveLength(6)
+        expect(carouselImages).toHaveLength(12)
         for (const image of carouselImages) {
             expect(image.getAttribute('loading')).toBe('lazy')
             expect(image.getAttribute('decoding')).toBe('async')
@@ -396,7 +458,7 @@ describe('Projects section', () => {
             <ProjectsSection onScrollNext={() => undefined} />,
         )
 
-        fireEvent.click(getByRole('button', { name: 'Show next project: CleanVoice' }))
+        fireEvent.click(getByRole('button', { name: 'Select project: CleanVoice' }))
         const desktop = within(getByTestId('projects-desktop-content'))
         fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
 
