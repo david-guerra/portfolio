@@ -54,6 +54,71 @@ describe('Projects section', () => {
         )
     })
 
+    test("renders every Arcade action from the project's semantic capability after rename and reorder", () => {
+        const originalProjects = [...PROJECTS]
+        const [arcadeProject, cleanVoiceProject, festProject] = originalProjects
+        const renamedArcadeProject = {
+            ...arcadeProject,
+            title: 'Renamed Arcade project',
+            action: 'play-arcade' as const,
+        }
+        const mutableProjects = PROJECTS as unknown as Array<(typeof PROJECTS)[number]>
+        const reorderedProjects = [cleanVoiceProject, renamedArcadeProject, festProject]
+        let unmount: (() => void) | undefined
+
+        mutableProjects.splice(0, mutableProjects.length, ...reorderedProjects)
+
+        try {
+            const rendered = render(<ProjectsSection onScrollNext={() => undefined} />)
+            unmount = rendered.unmount
+            const mobileArticles = within(rendered.getByTestId('projects-mobile-deck')).getAllByRole(
+                'article',
+            )
+            const desktop = within(rendered.getByTestId('projects-desktop-content'))
+
+            expect.soft(arcadeProject?.action).toBe('play-arcade')
+            expect
+                .soft(
+                    within(mobileArticles[0]).queryByRole('button', {
+                        name: 'Play in Arcade',
+                    }),
+                )
+                .toBeNull()
+            expect
+                .soft(
+                    within(mobileArticles[1]).queryByRole('button', {
+                        name: 'Play in Arcade',
+                    }),
+                )
+                .not.toBeNull()
+            expect.soft(desktop.queryByRole('button', { name: 'Play in Arcade ↓' })).toBeNull()
+
+            fireEvent.click(
+                within(rendered.getByRole('navigation', { name: 'Project index' })).getByRole(
+                    'button',
+                    { name: 'Select project: Renamed Arcade project' },
+                ),
+            )
+            expect.soft(desktop.queryByRole('button', { name: 'Play in Arcade ↓' })).not.toBeNull()
+
+            fireEvent.click(
+                within(mobileArticles[1]).getByRole('button', {
+                    name: 'Open Renamed Arcade project gallery from mobile card',
+                }),
+            )
+            expect
+                .soft(
+                    within(rendered.getByRole('dialog')).queryByRole('button', {
+                        name: 'Play in Arcade ↓',
+                    }),
+                )
+                .not.toBeNull()
+        } finally {
+            unmount?.()
+            mutableProjects.splice(0, mutableProjects.length, ...originalProjects)
+        }
+    })
+
     test('resolves every public image through the configured Vite base path', async () => {
         vi.stubEnv('BASE_URL', '/portfolio/')
         vi.resetModules()
@@ -239,6 +304,54 @@ describe('Projects section', () => {
         scrollTo.mockClear()
         fireEvent.click(getByRole('button', { name: 'Next project' }))
         expect(scrollTo).toHaveBeenLastCalledWith({ left: 1500, behavior: 'smooth' })
+    })
+
+    test('rebases before moving left from the first centerable physical card', () => {
+        vi.useFakeTimers()
+        const { getByRole, getByTestId } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const rail = getByTestId('projects-desktop-rail')
+        const scrollTo = vi.fn()
+        Object.defineProperties(rail, {
+            clientWidth: { configurable: true, value: 900 },
+            scrollLeft: { configurable: true, writable: true, value: 0 },
+            scrollTo: { configurable: true, value: scrollTo },
+        })
+
+        fireEvent.scroll(rail)
+        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+
+        fireEvent.click(getByRole('button', { name: 'Previous project' }))
+
+        expect(scrollTo.mock.calls).toEqual([
+            [{ left: 900, behavior: 'auto' }],
+            [{ left: 600, behavior: 'smooth' }],
+        ])
+    })
+
+    test('rebases before moving right from the last centerable physical card', () => {
+        vi.useFakeTimers()
+        const { getByRole, getByTestId } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+        const rail = getByTestId('projects-desktop-rail')
+        const scrollTo = vi.fn()
+        Object.defineProperties(rail, {
+            clientWidth: { configurable: true, value: 900 },
+            scrollLeft: { configurable: true, writable: true, value: 1800 },
+            scrollTo: { configurable: true, value: scrollTo },
+        })
+
+        fireEvent.scroll(rail)
+        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+
+        fireEvent.click(getByRole('button', { name: 'Next project' }))
+
+        expect(scrollTo.mock.calls).toEqual([
+            [{ left: 900, behavior: 'auto' }],
+            [{ left: 1200, behavior: 'smooth' }],
+        ])
     })
 
     test('recenters equivalent cards invisibly after scrolling through either repeated end', () => {
