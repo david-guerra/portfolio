@@ -36,6 +36,27 @@ describe('About section', () => {
         expect(about.getByRole('button', { name: 'Next · Projects ↓' })).toBeTruthy()
     })
 
+    test('widens only the structural footer frame on external displays', () => {
+        const { section, about } = renderAbout()
+        const frame = section.querySelector('[data-section-frame="external-wide"]')
+        const editorial = about.getByTestId('about-editorial-frame')
+        const metadata = about.getByTestId('about-footer-meta-frame')
+        const divider = about.getByTestId('about-footer-divider')
+        const heading = about.getByRole('heading', { level: 2, name: HEADLINE })
+        const location = about.getByText('Peruvian · Based in Berlin')
+
+        expect(frame).not.toBeNull()
+        expect(frame?.classList.contains('max-w-[1364px]')).toBe(true)
+        expect(frame?.classList.contains('min-[1800px]:max-w-[1800px]')).toBe(true)
+        expect(editorial.classList.contains('max-w-[1364px]')).toBe(true)
+        expect(metadata.classList.contains('max-w-[1364px]')).toBe(true)
+        expect(editorial.contains(heading)).toBe(true)
+        expect(metadata.contains(location)).toBe(true)
+        expect(editorial.contains(divider)).toBe(false)
+        expect(metadata.contains(divider)).toBe(false)
+        expect(frame?.contains(divider)).toBe(true)
+    })
+
     test('keeps HPI as the only inline body link and keeps accent phrases unlinked', () => {
         const { section, about } = renderAbout()
         const bodyLinks = section.querySelectorAll('p a')
