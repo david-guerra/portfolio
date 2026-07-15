@@ -180,7 +180,7 @@ export default function ProjectGalleryDialog({
                         </h2>
                         <p className="mt-5 text-body-mono text-body">{project.description}</p>
                         <div className="mt-7 flex flex-wrap gap-6">
-                            {project.title === 'Arcade, compiled' ? (
+                            {project.action === 'play-arcade' ? (
                                 <button
                                     type="button"
                                     onClick={() => {

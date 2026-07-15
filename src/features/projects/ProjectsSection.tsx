@@ -150,10 +150,23 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
         const renderedProjectIndex =
             ((desktopRenderedIndexRef.current % PROJECTS.length) + PROJECTS.length) %
             PROJECTS.length
-        const currentRenderedIndex =
+        let currentRenderedIndex =
             renderedProjectIndex === projectIndexRef.current
                 ? desktopRenderedIndexRef.current
                 : PROJECTS.length * DESKTOP_MIDDLE_COPY_INDEX + projectIndexRef.current
+        const firstCenterableRenderedIndex = 1
+        const lastCenterableRenderedIndex =
+            PROJECTS.length * DESKTOP_RAIL_COPIES.length - 2
+
+        if (
+            currentRenderedIndex + delta < firstCenterableRenderedIndex ||
+            currentRenderedIndex + delta > lastCenterableRenderedIndex
+        ) {
+            currentRenderedIndex =
+                PROJECTS.length * DESKTOP_MIDDLE_COPY_INDEX + projectIndexRef.current
+            scrollToRenderedCard(currentRenderedIndex, 'auto')
+        }
+
         const targetRenderedIndex = currentRenderedIndex + delta
         const targetIndex =
             ((targetRenderedIndex % PROJECTS.length) + PROJECTS.length) % PROJECTS.length
@@ -306,7 +319,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                                 >
                                     Open gallery →
                                 </button>
-                                {index === 0 ? (
+                                {item.action === 'play-arcade' ? (
                                     <button
                                         type="button"
                                         onClick={onScrollNext}
@@ -524,7 +537,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                         >
                             Open gallery →
                         </button>
-                        {projectIndex === 0 ? (
+                        {project.action === 'play-arcade' ? (
                             <button
                                 type="button"
                                 onClick={onScrollNext}

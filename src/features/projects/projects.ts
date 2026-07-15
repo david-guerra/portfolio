@@ -12,6 +12,7 @@ export interface Project {
     tag: string
     status: string
     description: string
+    action?: 'play-arcade'
     accent: ProjectAccent
     carouselImage: string
     carouselAlt: string
@@ -28,6 +29,7 @@ export const PROJECTS: readonly Project[] = [
         status: 'Shipped',
         description:
             'I wanted to see how much I could get the browser to handle on its own. Sudoku, Connect Four, and Game of Life are written in C and compiled to WebAssembly, with all of the game logic running on your machine.',
+        action: 'play-arcade',
         accent: 'teal',
         carouselImage: projectImage('browser-arcade-carousel.png'),
         carouselAlt: 'Browser Arcade preview with its three C and WebAssembly games',
