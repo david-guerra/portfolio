@@ -10,4 +10,3 @@
 4. Run focused tests and regular typechecking during implementation.
 5. Validate laptop, external-monitor, and mobile layouts in the browser.
 6. Run the full verification suite, review the diff, and commit the finished branch.
-

@@ -33,4 +33,3 @@ Approved from the interactive prototype on 2026-07-15. This supersedes the deskt
 - Component tests cover the three-card geometry, direct index selection, selected-card gallery behavior, and recentering from both repeated ends.
 - Browser QA covers horizontal scrolling/dragging, index selection, gallery opening, console health, and visual sizing at laptop, external-monitor, and mobile viewports.
 - Full test, lint, typecheck, and build gates must pass.
-
