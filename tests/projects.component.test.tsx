@@ -161,6 +161,13 @@ describe('Projects section', () => {
             <ProjectsSection onScrollNext={() => undefined} />,
         )
         const rail = getByTestId('projects-desktop-rail')
+        const section = rail.closest('#projects')
+        const frame = section?.querySelector('[data-section-frame="wide"]')
+
+        expect(frame).not.toBeNull()
+        expect(frame?.classList.contains('max-w-[1800px]')).toBe(true)
+        expect(frame?.classList.contains('wide:h-full')).toBe(true)
+        expect(frame?.classList.contains('wide:min-h-0')).toBe(true)
         const desktop = within(getByTestId('projects-desktop-content'))
         const projectIndex = getByRole('navigation', { name: 'Project index' })
         const cards = rail.querySelectorAll('[data-project-card]')

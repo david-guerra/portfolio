@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import SectionFrame from '../../components/SectionFrame.tsx'
 import ProjectGalleryDialog from './ProjectGalleryDialog.tsx'
 import { PROJECTS, type Project, type ProjectAccent } from './projects.ts'
 
@@ -233,7 +234,10 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
             }}
             className="min-h-full px-5 py-8 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-orange wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-10"
         >
-            <div className="mx-auto flex min-h-full w-full max-w-[1800px] flex-col wide:h-full wide:min-h-0">
+            <SectionFrame
+                variant="wide"
+                className="flex min-h-full flex-col wide:h-full wide:min-h-0"
+            >
                 <div className="flex flex-col justify-between gap-4 wide:flex-row wide:items-start">
                     <div>
                         <p className="text-label text-muted uppercase">PROJECTS</p>
@@ -550,7 +554,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                     </button>
                     </div>
                 </div>
-            </div>
+            </SectionFrame>
             {galleryProject ? (
                 <ProjectGalleryDialog
                     key={galleryProject.title}
