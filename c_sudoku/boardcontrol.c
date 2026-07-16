@@ -10,6 +10,7 @@
 static int rowMask[9];
 static int colMask[9];
 static int boxMask[9];
+static bool randomSeeded = false;
 
 static int boxIndex(int row, int col) { return (row / 3) * 3 + (col / 3); }
 
@@ -181,8 +182,16 @@ void generateBoard(Board *newBoard) {
   removeDigits(newBoard, 40);
 }
 
+void seedRandom(unsigned seed) {
+  srand(seed);
+  randomSeeded = true;
+}
+
 void initBoard(Board *newBoard) {
-  srand((unsigned)time(NULL));
+  if (!randomSeeded) {
+    srand((unsigned)time(NULL));
+    randomSeeded = true;
+  }
 
   // Reset masks
   for (int i = 0; i < 9; i++) {

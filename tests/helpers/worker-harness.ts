@@ -24,6 +24,8 @@ export interface WorkerHarness {
     send(msg: WorkerMessage): Promise<WorkerMessage[]>
 }
 
+let workerImportSerial = 0
+
 /** Absolute path to a shipped Emscripten glue file, as passed in INIT payloads. */
 export function wasmUrl(glueFile: string): string {
     return resolve(repoRoot, 'public', 'wasm', glueFile)
@@ -65,7 +67,10 @@ export async function bootWorker(workerRelPath: string): Promise<WorkerHarness> 
         return realFetch(input as Parameters<typeof fetch>[0], init as Parameters<typeof fetch>[1])
     }
 
-    await import(pathToFileURL(resolve(repoRoot, workerRelPath)).href)
+    const workerUrl = pathToFileURL(resolve(repoRoot, workerRelPath))
+    workerUrl.searchParams.set('worker-harness-run', String(workerImportSerial))
+    workerImportSerial += 1
+    await import(workerUrl.href)
 
     if (!scope.onmessage) {
         throw new Error(`${workerRelPath} did not register self.onmessage`)

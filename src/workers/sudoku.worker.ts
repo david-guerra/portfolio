@@ -12,14 +12,25 @@ export type SudokuMessage =
 
 export type SudokuResponse =
     | { type: 'READY' }
-    | { type: 'BOARD_UPDATE'; payload: { board: number[][]; solved: boolean } }
+    | {
+        type: 'BOARD_UPDATE'
+        payload: {
+            board: number[][]
+            initialCells: boolean[][]
+            solved: boolean
+            reason: SudokuUpdateReason
+        }
+    }
     | { type: 'ERROR'; payload: string }
+
+export type SudokuUpdateReason = 'INIT' | 'SET_CELL' | 'CLEAR_USER' | 'SOLVE' | 'RESET'
 
 interface EmscriptenOptions {
     locateFile?: (path: string, prefix: string) => string
 }
 
 interface SudokuModule {
+    _wasm_sudoku_seed(seed: number): void
     _wasm_sudoku_init(): void
     _wasm_sudoku_clear(): void
     _wasm_sudoku_get_cell(r: number, c: number): number
@@ -31,6 +42,12 @@ interface SudokuModule {
 
 let wasmModule: SudokuModule | null = null
 let initialBoard: number[][] = []
+
+function randomSeed(): number {
+    const value = new Uint32Array(1)
+    globalThis.crypto.getRandomValues(value)
+    return value[0]
+}
 
 // Provided globally by the importScripts'd Emscripten glue
 declare function createSudokuModule(options?: EmscriptenOptions): Promise<SudokuModule>
@@ -46,6 +63,22 @@ function getBoardState(): number[][] {
         board.push(row)
     }
     return board
+}
+
+function getInitialCells(): boolean[][] {
+    return initialBoard.map((row) => row.map((value) => value !== 0))
+}
+
+function postBoardUpdate(solved: boolean, reason: SudokuUpdateReason): void {
+    self.postMessage({
+        type: 'BOARD_UPDATE',
+        payload: {
+            board: getBoardState(),
+            initialCells: getInitialCells(),
+            solved,
+            reason,
+        },
+    })
 }
 
 self.onmessage = async (e: MessageEvent<SudokuMessage>) => {
@@ -68,25 +101,24 @@ self.onmessage = async (e: MessageEvent<SudokuMessage>) => {
                     },
                 })
 
+                wasmModule._wasm_sudoku_seed(randomSeed())
                 wasmModule._wasm_sudoku_init()
 
                 self.postMessage({ type: 'READY' })
                 initialBoard = getBoardState()
-                self.postMessage({
-                    type: 'BOARD_UPDATE',
-                    payload: { board: initialBoard, solved: false },
-                })
+                postBoardUpdate(false, 'INIT')
                 break
             }
 
             case 'SET_CELL': {
                 if (!wasmModule) throw new Error('Wasm not ready')
                 const { row, col, val } = e.data.payload
+                if (initialBoard[row]?.[col] !== 0) {
+                    postBoardUpdate(!!wasmModule._wasm_sudoku_is_solved(), 'SET_CELL')
+                    break
+                }
                 wasmModule._wasm_sudoku_set_cell(row, col, val)
-                self.postMessage({
-                    type: 'BOARD_UPDATE',
-                    payload: { board: getBoardState(), solved: !!wasmModule._wasm_sudoku_is_solved() },
-                })
+                postBoardUpdate(!!wasmModule._wasm_sudoku_is_solved(), 'SET_CELL')
                 break
             }
 
@@ -99,10 +131,7 @@ self.onmessage = async (e: MessageEvent<SudokuMessage>) => {
                         }
                     }
                 }
-                self.postMessage({
-                    type: 'BOARD_UPDATE',
-                    payload: { board: getBoardState(), solved: false },
-                })
+                postBoardUpdate(false, 'CLEAR_USER')
                 break
             }
 
@@ -117,10 +146,7 @@ self.onmessage = async (e: MessageEvent<SudokuMessage>) => {
                     }
                 }
                 wasmModule._wasm_sudoku_solve()
-                self.postMessage({
-                    type: 'BOARD_UPDATE',
-                    payload: { board: getBoardState(), solved: !!wasmModule._wasm_sudoku_is_solved() },
-                })
+                postBoardUpdate(!!wasmModule._wasm_sudoku_is_solved(), 'SOLVE')
                 break
             }
 
@@ -129,10 +155,7 @@ self.onmessage = async (e: MessageEvent<SudokuMessage>) => {
                 wasmModule._wasm_sudoku_clear()
                 wasmModule._wasm_sudoku_init()
                 initialBoard = getBoardState()
-                self.postMessage({
-                    type: 'BOARD_UPDATE',
-                    payload: { board: initialBoard, solved: false },
-                })
+                postBoardUpdate(false, 'RESET')
                 break
             }
 

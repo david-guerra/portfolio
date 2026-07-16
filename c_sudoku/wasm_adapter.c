@@ -6,6 +6,9 @@
 Board g_board;
 
 EMSCRIPTEN_KEEPALIVE
+void wasm_sudoku_seed(unsigned seed) { seedRandom(seed); }
+
+EMSCRIPTEN_KEEPALIVE
 void wasm_sudoku_clear() {
   initBoard(&g_board);
   for (int i = 0; i < nROW; i++) {
