@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 void initBoard(Board *b);
+void seedRandom(unsigned seed);
 void updateBoard(Board *b, int x, int y, int val);
 void generateBoard(Board *b);
 

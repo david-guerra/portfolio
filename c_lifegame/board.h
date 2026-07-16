@@ -1,8 +1,8 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#define nROW 18
-#define nCOL 18
+#define nROW 25
+#define nCOL 30
 
 #include <stdint.h>
 

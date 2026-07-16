@@ -1,15 +1,19 @@
 #include "boardcontrol.h"
 #include <string.h>
 
+_Static_assert(nROW > 0, "Game of Life requires at least one row");
+_Static_assert(nCOL > 0 && nCOL < 32,
+               "Game of Life rows must fit in one uint32_t without full-width shifts");
+
 void initGoL(GoL *g) { memset(g, 0, sizeof(*g)); }
 
 void setCell(GoL *g, int row, int col, bool val) {
   if (row < 0 || row >= nROW || col < 0 || col >= nCOL)
     return;
   if (val) {
-    g->buf[g->active].rows[row] |= (1u << col);
+    g->buf[g->active].rows[row] |= (UINT32_C(1) << col);
   } else {
-    g->buf[g->active].rows[row] &= ~(1u << col);
+    g->buf[g->active].rows[row] &= ~(UINT32_C(1) << col);
   }
 }
 
@@ -20,7 +24,7 @@ bool getCell(GoL *g, int row, int col) {
 }
 
 /* Column mask for valid bits */
-#define COL_MASK ((1u << nCOL) - 1)
+#define COL_MASK ((UINT32_C(1) << nCOL) - UINT32_C(1))
 
 /* Wrap-around column shifts */
 static inline uint32_t shl(uint32_t v) {
