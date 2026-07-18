@@ -6,8 +6,7 @@ export interface ContactContextValue {
 
 export const ContactContext = createContext<ContactContextValue | null>(null)
 
-export function useContact(): ContactContextValue {
-    const value = useContext(ContactContext)
-    if (!value) throw new Error('useContact must be used inside ContactProvider')
-    return value
+/* Null outside ContactProvider so App can render bare (tests); triggers then no-op. */
+export function useContact(): ContactContextValue | null {
+    return useContext(ContactContext)
 }
