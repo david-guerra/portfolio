@@ -7,6 +7,7 @@ import {
     type FormEvent,
     type MouseEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { PROFILE_LINKS } from '../../content/profile.ts'
 import { submitContact } from './contactDelivery.ts'
 import { contactReducer, createContactState } from './contactState.ts'
@@ -46,11 +47,19 @@ export default function ContactDialog({
         createContactState,
     )
 
+    /* Deliberately NOT showModal(): the top layer would paint over hCaptcha's
+       body-appended challenge. Containment comes from inert + our own backdrop. */
     useEffect(() => {
-        const dialog = dialogRef.current
-        if (!dialog) return
-        if (open && !dialog.open) dialog.showModal()
-        if (!open && dialog.open) dialog.close()
+        const root = document.getElementById('root')
+        if (!root || !open) return
+        root.inert = true
+        return () => {
+            root.inert = false
+        }
+    }, [open])
+
+    useEffect(() => {
+        if (open) dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
     }, [open])
 
     useEffect(() => {
@@ -66,9 +75,7 @@ export default function ContactDialog({
         return () => observer.disconnect()
     }, [])
 
-    const close = () => dialogRef.current?.close()
-
-    const onDialogClose = () => {
+    const requestClose = () => {
         if (state.status === 'success') {
             formRef.current?.reset()
             captchaRef.current?.resetCaptcha()
@@ -78,8 +85,20 @@ export default function ContactDialog({
         onRequestClose()
     }
 
-    const onBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
-        if (event.target === event.currentTarget) close()
+    /* No dependency array: the listener closes over the latest requestClose.
+       Keydown inside the hCaptcha challenge iframe never reaches this document,
+       so Escape there dismisses only the challenge. */
+    useEffect(() => {
+        if (!open) return
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') requestClose()
+        }
+        document.addEventListener('keydown', onKeyDown)
+        return () => document.removeEventListener('keydown', onKeyDown)
+    })
+
+    const onBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+        if (event.target === event.currentTarget) requestClose()
     }
 
     const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -119,14 +138,21 @@ export default function ContactDialog({
         </a>
     )
 
-    return (
-        <dialog
-            ref={dialogRef}
-            aria-labelledby="contact-dialog-title"
-            className="m-auto w-[min(34rem,calc(100%-2.5rem))] rounded-card border border-border bg-surface p-0 text-body backdrop:bg-black/70"
+    return createPortal(
+        <div
+            data-testid="contact-backdrop"
             onClick={onBackdropClick}
-            onClose={onDialogClose}
+            className={`fixed inset-0 z-40 items-center justify-center bg-black/70 ${
+                open ? 'flex' : 'hidden'
+            }`}
         >
+            <dialog
+                ref={dialogRef}
+                open={open}
+                aria-modal="true"
+                aria-labelledby="contact-dialog-title"
+                className="static m-0 w-[min(34rem,calc(100%-2.5rem))] rounded-card border border-border bg-surface p-0 text-body"
+            >
             <div className="max-h-[calc(100dvh-2.5rem)] overflow-y-auto p-5 sm:p-7">
                 <div className="mb-5 flex items-start justify-between gap-4">
                     <h2 id="contact-dialog-title" className="text-lg text-ink">
@@ -134,7 +160,7 @@ export default function ContactDialog({
                     </h2>
                     <button
                         type="button"
-                        onClick={close}
+                        onClick={requestClose}
                         aria-label="Close contact form"
                         className={`cursor-pointer text-lg leading-none text-dim transition-colors hover:text-ink ${FOCUS_RING}`}
                     >
@@ -147,7 +173,7 @@ export default function ContactDialog({
                         <p>Message sent! I’ll get back to you soon.</p>
                         <button
                             type="button"
-                            onClick={close}
+                            onClick={requestClose}
                             className={`cursor-pointer rounded-chip border border-orange px-3.5 py-1.5 text-sm text-orange transition-colors hover:bg-orange hover:text-bg ${FOCUS_RING}`}
                         >
                             Close
@@ -230,6 +256,8 @@ export default function ContactDialog({
                     </form>
                 )}
             </div>
-        </dialog>
+            </dialog>
+        </div>,
+        document.body,
     )
 }
