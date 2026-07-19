@@ -929,7 +929,7 @@ Verify:
 
 Inspect the rendered DOM and production bundle. Confirm:
 
-- `[redacted-owner-email]` is absent;
+- David's personal address is absent;
 - no mailto link exists;
 - no local-storage write occurs;
 - the disclosure reads `Protected by hCaptcha. Messages are processed by Web3Forms.`; and

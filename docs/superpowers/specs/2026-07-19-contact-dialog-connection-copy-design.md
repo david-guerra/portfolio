@@ -7,7 +7,7 @@ The current contact copy frames outreach mainly around projects, roles, and prob
 ## Approved copy
 
 - Heading: **Let’s connect.**
-- Supporting line: **Projects, ideas, or simply a hello—my inbox is open.**
+- Supporting line: **Projects, ideas, or simply a hello. My inbox is open.**
 
 The existing “Direct line,” “Work email,” and “Elsewhere” labels remain unchanged.
 

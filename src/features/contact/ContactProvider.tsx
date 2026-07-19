@@ -20,7 +20,6 @@ export default function ContactProvider({ children }: { children: ReactNode }) {
         <ContactContext.Provider value={{ openContact }}>
             {children}
             <ContactDialog
-                accessKey={import.meta.env.VITE_WEB3FORMS_ACCESS_KEY ?? ''}
                 open={open}
                 onRequestClose={closeContact}
             />
