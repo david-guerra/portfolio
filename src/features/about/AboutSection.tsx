@@ -4,7 +4,8 @@ const FOCUS_RING =
     'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange'
 
 export interface AboutSectionProps {
-    onSayHello?: () => void
+    /* Receives the trigger element so the contact dialog can restore focus to it. */
+    onSayHello?: (trigger: HTMLElement) => void
     onScrollNext: () => void
 }
 
@@ -60,7 +61,7 @@ export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionP
                             <div className="hidden text-sm wide:mt-7 wide:block">
                                 <button
                                     type="button"
-                                    onClick={onSayHello}
+                                    onClick={(event) => onSayHello?.(event.currentTarget)}
                                     className={`cursor-pointer border-b border-about-orange pb-1 text-about-orange transition-colors hover:text-ink ${FOCUS_RING}`}
                                 >
                                     Say hello →

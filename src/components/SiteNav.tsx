@@ -1,3 +1,4 @@
+import { PROFILE_LINKS } from '../content/profile.ts'
 import type { NavSection } from '../lib/sections.ts'
 import type { Theme } from '../lib/theme.ts'
 
@@ -12,8 +13,8 @@ interface SiteNavProps {
     theme: Theme
     onNavigate: (section: NavSection) => void
     onToggleTheme: () => void
-    /* Wired by the contact-popup ticket (#17); the button ships its final look now. */
-    onContact?: () => void
+    /* Receives the trigger element so the contact dialog can restore focus to it. */
+    onContact?: (trigger: HTMLElement) => void
 }
 
 export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onContact }: SiteNavProps) {
@@ -42,7 +43,7 @@ export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onCo
             </nav>
             <div className="flex items-center gap-3 wide:gap-7">
                 <a
-                    href="https://github.com/david-guerra"
+                    href={PROFILE_LINKS.github}
                     target="_blank"
                     rel="noreferrer"
                     aria-label="GitHub"
@@ -53,7 +54,7 @@ export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onCo
                     <span aria-hidden="true" className="mt-1 block h-px bg-olive wide:mt-1.5" />
                 </a>
                 <a
-                    href="https://linkedin.com/in/david-guerrasal"
+                    href={PROFILE_LINKS.linkedin}
                     target="_blank"
                     rel="noreferrer"
                     aria-label="LinkedIn"
@@ -65,7 +66,7 @@ export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onCo
                 </a>
                 <button
                     type="button"
-                    onClick={onContact}
+                    onClick={(event) => onContact?.(event.currentTarget)}
                     className="cursor-pointer rounded-chip border border-orange px-2.5 py-1 text-xs text-orange transition-colors hover:bg-orange hover:text-bg wide:px-3.5 wide:py-1.5 wide:text-sm"
                 >
                     Contact

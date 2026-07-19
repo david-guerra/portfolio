@@ -3,6 +3,7 @@ import Hero from './components/Hero.tsx'
 import SiteNav from './components/SiteNav.tsx'
 import AboutSection from './features/about/AboutSection.tsx'
 import ArcadeSection from './features/arcade/ArcadeSection.tsx'
+import { useContact } from './features/contact/contactContext.ts'
 import ProjectsSection from './features/projects/ProjectsSection.tsx'
 import { activeSection, type NavSection } from './lib/sections.ts'
 import { resolveInitialTheme, toggleTheme, THEME_STORAGE_KEY, type Theme } from './lib/theme.ts'
@@ -25,6 +26,7 @@ export default function App() {
     const [theme, setTheme] = useState<Theme>(readStoredTheme)
     const [active, setActive] = useState<NavSection | null>(null)
     const scrollerRef = useRef<HTMLDivElement>(null)
+    const contact = useContact()
 
     /* Layout effect: children (the hero canvas) sample CSS tokens in their own
        effects, which run before a parent passive effect would apply the theme. */
@@ -62,6 +64,7 @@ export default function App() {
                 theme={theme}
                 onNavigate={navigate}
                 onToggleTheme={() => setTheme(toggleTheme)}
+                onContact={(trigger) => contact?.openContact(trigger)}
             />
             <div
                 ref={scrollerRef}
@@ -74,7 +77,10 @@ export default function App() {
                 >
                     <Hero theme={theme} onScrollNext={() => scrollToSection('about')} />
                 </section>
-                <AboutSection onScrollNext={() => scrollToSection('projects')} />
+                <AboutSection
+                    onSayHello={(trigger) => contact?.openContact(trigger)}
+                    onScrollNext={() => scrollToSection('projects')}
+                />
                 <ProjectsSection onScrollNext={() => scrollToSection('arcade')} />
                 <ArcadeSection
                     theme={theme}
