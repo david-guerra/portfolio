@@ -239,11 +239,18 @@ export interface FabricCell {
     kind: number
     alpha: number
     sizeMul: number
+    /* Full opacity before the lower-left copy void is cut out. The hand-off
+       releases that void back into the weave so its hard edge cannot become a seam. */
+    baseAlpha?: number
+    /* Per-cell crumble jitter. Name cells use the lower range and therefore
+       hold longer as the wavefront rises through the top viewport band. */
+    handoffThreshold?: number
 }
 
 export function buildFabric(layout: FabricLayout, seed: number, fadeRect?: FadeRect): FabricCell[] {
     const { cols, rows, clusterSize } = layout
     const rnd = mulberry32(seed)
+    const handoffRnd = mulberry32(seed ^ 0x7f4a7c15)
     const names = nameCells(cols, rows, clusterSize)
     const cells: FabricCell[] = []
     for (let r = 0; r < rows; r++) {
@@ -271,8 +278,104 @@ export function buildFabric(layout: FabricLayout, seed: number, fadeRect?: FadeR
                 kind = KIND_GRAY_BASE
                 alpha = 0.55 + rnd() * 0.45
             }
+            const baseAlpha = alpha
             if (fadeRect) alpha *= fadeFactor(c, r, fadeRect, 8)
-            cells.push({ c, r, kind, alpha, sizeMul })
+            const handoffThreshold = names.has(r * cols + c)
+                ? 0.05 + handoffRnd() * 0.4
+                : 0.25 + handoffRnd() * 0.75
+            cells.push({ c, r, kind, alpha, sizeMul, baseAlpha, handoffThreshold })
+        }
+    }
+    return cells
+}
+
+function clampUnit(value: number): number {
+    return Math.max(0, Math.min(1, value))
+}
+
+function smoothstep(start: number, end: number, value: number): number {
+    const t = clampUnit((value - start) / (end - start))
+    return t * t * (3 - 2 * t)
+}
+
+export function handoffProgress(scrollTop: number, heroHeight: number): number {
+    if (!Number.isFinite(scrollTop) || !Number.isFinite(heroHeight) || heroHeight <= 0) return 0
+    return clampUnit(scrollTop / heroHeight)
+}
+
+/* Crumble wavefront approved on ticket #20. Cells dissolve only when they enter
+   the top viewport band; low thresholds make the letter cells linger longest. */
+export function wavefrontFactor(
+    cell: FabricCell,
+    pitch: number,
+    progress: number,
+    viewportHeight: number,
+): number {
+    const p = clampUnit(progress)
+    if (p <= 0 || !Number.isFinite(pitch) || !Number.isFinite(viewportHeight)) return 1
+    if (pitch <= 0 || viewportHeight <= 0) return 1
+    const threshold =
+        cell.handoffThreshold ?? (cell.kind === KIND_NAME ? 0.25 : 0.625)
+    const screenY = cell.r * pitch + pitch * 0.5 - p * viewportHeight
+    const cutoff =
+        (0.08 + 0.22 * threshold) * viewportHeight * Math.min(1, p * 3)
+    return clampUnit((screenY - cutoff) / 44)
+}
+
+export function heroTextOpacity(progress: number): number {
+    return 1 - smoothstep(0.02, 0.18, clampUnit(progress))
+}
+
+export function handoffCellAlpha(
+    cell: FabricCell,
+    pitch: number,
+    progress: number,
+    viewportHeight: number,
+): number {
+    const p = clampUnit(progress)
+    if (p <= 0) return cell.alpha
+    const threshold = cell.handoffThreshold ?? 0.625
+    const releaseStart = 0.015 + threshold * 0.035
+    const release = smoothstep(releaseStart, releaseStart + 0.12, p)
+    const baseAlpha = cell.baseAlpha ?? cell.alpha
+    const restoredAlpha = cell.alpha + (baseAlpha - cell.alpha) * release
+    return restoredAlpha * wavefrontFactor(cell, pitch, p, viewportHeight)
+}
+
+/* Same-seed, same-pitch continuation used behind About. Its top 12% is a full
+   weave; the keep ramp reaches zero at 62%, leaving the editorial copy clear. */
+export function buildContinuum(layout: FabricLayout, seed: number): FabricCell[] {
+    const { cols, rows } = layout
+    const rnd = mulberry32(seed ^ 0x51f7)
+    const cells: FabricCell[] = []
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const t = rows > 0 ? r / rows : 1
+            const keep = t < 0.12 ? 1 : Math.max(0, 1 - (t - 0.12) / 0.5)
+            const q = keep * keep
+            const x = cols > 0 ? c / cols : 0
+            const u = rnd()
+            let kind = KIND_GRAY_BASE
+            let alpha = 0
+            let sizeMul = 1
+
+            if (u < 0.028 * (0.45 + x * 1.4) * keep) {
+                kind = KIND_ACCENTS[(rnd() * 4) | 0]
+                alpha = (0.3 + rnd() * 0.65) * (0.55 + 0.45 * keep)
+                sizeMul = 0.85 + rnd() * 0.9
+            } else if (u < 0.09 * q) {
+                kind = KIND_GRAY_HI
+                alpha = (0.5 + rnd() * 0.5) * (0.6 + 0.4 * keep)
+            } else if (u < 0.28 * q) {
+                kind = KIND_GRAY_MID
+                alpha = 0.6 + 0.4 * keep
+            } else if (u < q) {
+                kind = KIND_GRAY_BASE
+                alpha = (0.55 + rnd() * 0.45) * (0.6 + 0.4 * keep)
+            }
+
+            cells.push({ c, r, kind, alpha, sizeMul, baseAlpha: alpha })
         }
     }
     return cells
