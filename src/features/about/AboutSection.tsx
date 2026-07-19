@@ -1,4 +1,6 @@
 import SectionFrame from '../../components/SectionFrame.tsx'
+import HeroFabricContinuum from '../../components/HeroFabricContinuum.tsx'
+import type { Theme } from '../../lib/theme.ts'
 
 const FOCUS_RING =
     'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange'
@@ -7,16 +9,29 @@ export interface AboutSectionProps {
     /* Receives the trigger element so the contact dialog can restore focus to it. */
     onSayHello?: (trigger: HTMLElement) => void
     onScrollNext: () => void
+    theme?: Theme
+    fabricSeed?: number
+    fabricPitch?: number | null
 }
 
-export default function AboutSection({ onSayHello, onScrollNext }: AboutSectionProps) {
+export default function AboutSection({
+    onSayHello,
+    onScrollNext,
+    theme = 'dark',
+    fabricSeed = 1,
+    fabricPitch = null,
+}: AboutSectionProps) {
     return (
         <section
             id="about"
             aria-labelledby="about-heading"
-            className="min-h-full px-5 py-6 wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-20"
+            className="relative min-h-full overflow-hidden px-5 py-6 wide:h-full wide:snap-start wide:snap-always wide:overflow-y-auto wide:px-14 wide:py-20"
         >
-            <SectionFrame variant="external-wide" className="flex min-h-full flex-col">
+            <HeroFabricContinuum theme={theme} seed={fabricSeed} pitch={fabricPitch} />
+            <SectionFrame
+                variant="external-wide"
+                className="relative z-10 flex min-h-full flex-col"
+            >
                 <div
                     data-testid="about-editorial-frame"
                     className="mx-auto w-full max-w-[1364px]"

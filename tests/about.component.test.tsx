@@ -57,6 +57,21 @@ describe('About section', () => {
         expect(frame?.contains(divider)).toBe(true)
     })
 
+    test('layers the inert fabric continuum behind the About editorial', () => {
+        const { section, about } = renderAbout()
+        const canvas = about.getByTestId('about-fabric-continuum')
+        const frame = section.querySelector('[data-section-frame="external-wide"]')
+
+        expect(canvas.tagName).toBe('CANVAS')
+        expect(canvas.getAttribute('aria-hidden')).toBe('true')
+        expect(canvas.classList.contains('pointer-events-none')).toBe(true)
+        expect(canvas.classList.contains('absolute')).toBe(true)
+        expect(section.classList.contains('relative')).toBe(true)
+        expect(section.classList.contains('overflow-hidden')).toBe(true)
+        expect(frame?.classList.contains('relative')).toBe(true)
+        expect(frame?.classList.contains('z-10')).toBe(true)
+    })
+
     test('keeps HPI as the only inline body link and keeps accent phrases unlinked', () => {
         const { section, about } = renderAbout()
         const bodyLinks = section.querySelectorAll('p a')

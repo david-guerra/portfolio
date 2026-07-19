@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import Hero from './components/Hero.tsx'
 import SiteNav from './components/SiteNav.tsx'
 import AboutSection from './features/about/AboutSection.tsx'
@@ -25,8 +25,18 @@ const renderedOffsets = (el: HTMLDivElement) => ({
 export default function App() {
     const [theme, setTheme] = useState<Theme>(readStoredTheme)
     const [active, setActive] = useState<NavSection | null>(null)
+    const [heroSeed, setHeroSeed] = useState(() => (Math.random() * 1e9) | 0 || 1)
+    const [heroPitch, setHeroPitch] = useState<number | null>(null)
     const scrollerRef = useRef<HTMLDivElement>(null)
     const contact = useContact()
+
+    const reshuffleHero = useCallback(() => {
+        setHeroSeed((Math.random() * 1e9) | 0 || 1)
+    }, [])
+
+    const rememberHeroPitch = useCallback((pitch: number) => {
+        setHeroPitch((current) => (current === pitch ? current : pitch))
+    }, [])
 
     /* Layout effect: children (the hero canvas) sample CSS tokens in their own
        effects, which run before a parent passive effect would apply the theme. */
@@ -75,9 +85,18 @@ export default function App() {
                     id="hero"
                     className="relative min-h-full wide:h-full wide:snap-start wide:snap-always"
                 >
-                    <Hero theme={theme} onScrollNext={() => scrollToSection('about')} />
+                    <Hero
+                        theme={theme}
+                        seed={heroSeed}
+                        onReseed={reshuffleHero}
+                        onLayout={rememberHeroPitch}
+                        onScrollNext={() => scrollToSection('about')}
+                    />
                 </section>
                 <AboutSection
+                    theme={theme}
+                    fabricSeed={heroSeed}
+                    fabricPitch={heroPitch}
                     onSayHello={(trigger) => contact?.openContact(trigger)}
                     onScrollNext={() => scrollToSection('projects')}
                 />

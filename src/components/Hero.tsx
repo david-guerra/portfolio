@@ -7,9 +7,13 @@ import {
     buildFabric,
     canvasDpr,
     expireFlips,
+    handoffCellAlpha,
+    handoffProgress,
+    heroTextOpacity,
     isPosterTap,
     layoutFabric,
     pointerVelocity,
+    wavefrontFactor,
     type FabricCell,
     type FabricLayout,
     type FlipMotion,
@@ -112,13 +116,15 @@ function drawActiveCell(
     now: number,
     scatter?: ScatterMotion,
     flip?: FlipMotion,
+    alphaOverride?: number,
+    effectFactor = 1,
 ): void {
     const size = cellSize(cell, pitch)
     const offsetX = scatter?.ox ?? 0
     const offsetY = scatter?.oy ?? 0
     const x = cell.c * pitch + (pitch - size) / 2 + offsetX
     const y = cell.r * pitch + (pitch - size) / 2 + offsetY
-    let alpha = cell.alpha
+    let alpha = alphaOverride ?? cell.alpha
 
     if (flip) {
         const remaining = flip.until - now
@@ -131,7 +137,7 @@ function drawActiveCell(
                 ctx.fillStyle = palette[cell.kind]
                 ctx.fillRect(x, y, size, size)
             }
-            ctx.globalAlpha = flip.alpha * amount
+            ctx.globalAlpha = flip.alpha * amount * effectFactor
             ctx.fillStyle = palette[flip.kind]
             ctx.fillRect(x, y, size, size)
             return
@@ -146,24 +152,34 @@ function drawActiveCell(
     if (cell.kind !== KIND_NAME && scatter) {
         const displacement = Math.hypot(scatter.ox, scatter.oy) / pitch
         if (displacement > 0.45) {
-            ctx.globalAlpha = Math.min(0.85, (displacement - 0.45) * 0.55)
+            ctx.globalAlpha = Math.min(0.85, (displacement - 0.45) * 0.55) * effectFactor
             ctx.fillStyle = palette[(cell.c + cell.r) % 4]
             ctx.fillRect(x, y, size, size)
         }
     }
 }
 
-export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNext: () => void }) {
+export interface HeroProps {
+    theme: Theme
+    seed: number
+    onReseed: () => void
+    onLayout: (pitch: number) => void
+    onScrollNext: () => void
+}
+
+export default function Hero({ theme, seed, onReseed, onLayout, onScrollNext }: HeroProps) {
     const wrapRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const textRef = useRef<HTMLDivElement>(null)
+    const cueRef = useRef<HTMLButtonElement>(null)
     const sceneRef = useRef<Scene | null>(null)
     const paletteRef = useRef<string[] | null>(null)
     const scatterRef = useRef(new Map<number, ScatterMotion>())
     const flipsRef = useRef(new Map<number, FlipMotion>())
-    const seedRef = useRef(0)
     const rafRef = useRef(0)
+    const scrollRafRef = useRef(0)
     const reducedRef = useRef(false)
+    const handoffProgressRef = useRef(0)
     const lastTickRef = useRef(0)
     const lastPaintRef = useRef(0)
     const lastFlipRef = useRef(0)
@@ -182,6 +198,31 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
         const { ctx, baseCanvas, width, height, layout, cells } = scene
         const { pitch } = layout
         ctx.clearRect(0, 0, width, height)
+        const progress = reducedRef.current ? 0 : handoffProgressRef.current
+        if (progress > 0.002) {
+            for (let idx = 0; idx < cells.length; idx++) {
+                const cell = cells[idx]
+                const factor = wavefrontFactor(cell, pitch, progress, height)
+                const alpha = handoffCellAlpha(cell, pitch, progress, height)
+                if (alpha <= 0 && !scatterRef.current.has(idx) && !flipsRef.current.has(idx)) {
+                    continue
+                }
+                drawActiveCell(
+                    ctx,
+                    cell,
+                    pitch,
+                    palette,
+                    now,
+                    scatterRef.current.get(idx),
+                    flipsRef.current.get(idx),
+                    alpha,
+                    factor,
+                )
+            }
+            ctx.globalAlpha = 1
+            return
+        }
+
         ctx.drawImage(baseCanvas, 0, 0, width, height)
 
         const active = new Set([...scatterRef.current.keys(), ...flipsRef.current.keys()])
@@ -257,8 +298,8 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
         if (!baseCtx) return
 
         paletteRef.current ??= readPalette()
-        if (!seedRef.current) seedRef.current = (Math.random() * 1e9) | 0 || 1
         const layout = layoutFabric(rect.width, rect.height)
+        onLayout(layout.pitch)
 
         let fadeRect
         const text = textRef.current?.getBoundingClientRect()
@@ -279,18 +320,23 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
             height: rect.height,
             dpr,
             layout,
-            cells: buildFabric(layout, seedRef.current, fadeRect),
+            cells: buildFabric(layout, seed, fadeRect),
         }
         sceneRef.current = scene
         renderBaseLayer(scene, paletteRef.current)
         paint()
-    }, [paint, stopMotion])
+    }, [onLayout, paint, seed, stopMotion])
 
     useEffect(() => {
         const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
         const applyMotionPreference = () => {
             reducedRef.current = reducedQuery.matches
-            if (reducedQuery.matches) stopMotion()
+            if (reducedQuery.matches) {
+                handoffProgressRef.current = 0
+                if (textRef.current) textRef.current.style.opacity = '1'
+                if (cueRef.current) cueRef.current.style.opacity = '1'
+                stopMotion()
+            }
         }
 
         setup()
@@ -304,6 +350,49 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
             observer.disconnect()
         }
     }, [setup, stopMotion])
+
+    useEffect(() => {
+        const wrap = wrapRef.current
+        const heroPane = wrap?.closest<HTMLElement>('#hero')
+        const scroller = heroPane?.parentElement
+        if (!heroPane || !scroller) return
+
+        const paintHandoff = (now: number) => {
+            if (now - lastPaintRef.current < FRAME_INTERVAL_MS) {
+                scrollRafRef.current = requestAnimationFrame(paintHandoff)
+                return
+            }
+            lastPaintRef.current = now
+            scrollRafRef.current = 0
+            paint(now)
+        }
+
+        const updateHandoff = () => {
+            if (reducedRef.current) {
+                handoffProgressRef.current = 0
+                if (textRef.current) textRef.current.style.opacity = '1'
+                if (cueRef.current) cueRef.current.style.opacity = '1'
+                return
+            }
+            const height = heroPane.clientHeight || scroller.clientHeight
+            const progress = handoffProgress(scroller.scrollTop - heroPane.offsetTop, height)
+            if (progress === handoffProgressRef.current) return
+            handoffProgressRef.current = progress
+            const opacity = String(heroTextOpacity(progress))
+            if (textRef.current) textRef.current.style.opacity = opacity
+            if (cueRef.current) cueRef.current.style.opacity = opacity
+            if (scrollRafRef.current) return
+            scrollRafRef.current = requestAnimationFrame(paintHandoff)
+        }
+
+        updateHandoff()
+        scroller.addEventListener('scroll', updateHandoff, { passive: true })
+        return () => {
+            scroller.removeEventListener('scroll', updateHandoff)
+            cancelAnimationFrame(scrollRafRef.current)
+            scrollRafRef.current = 0
+        }
+    }, [paint])
 
     useEffect(() => {
         paletteRef.current = readPalette()
@@ -396,8 +485,7 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
         if (!start || start.pointerId !== e.pointerId || !isPosterTap(start, pointAt(e), false)) {
             return
         }
-        seedRef.current = (Math.random() * 1e9) | 0 || 1
-        setup()
+        onReseed()
     }
 
     const handleCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -430,6 +518,7 @@ export default function Hero({ theme, onScrollNext }: { theme: Theme; onScrollNe
                 </p>
             </div>
             <button
+                ref={cueRef}
                 type="button"
                 onClick={onScrollNext}
                 className="absolute right-5 bottom-8 cursor-pointer text-meta text-muted transition-colors hover:text-body wide:right-14 wide:bottom-14"

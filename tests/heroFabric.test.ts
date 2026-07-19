@@ -533,3 +533,114 @@ test('the reduced-motion poster reshuffles only after a completed stationary tap
     assert.equal(isPosterTap?.({ x: 10, y: 10 }, { x: 19, y: 10 }, false), false)
     assert.equal(isPosterTap?.({ x: 10, y: 10 }, { x: 10, y: 10 }, true), false)
 })
+
+/* ---- approved hero -> About hand-off ---- */
+
+const handoffApi = heroFabric as unknown as {
+    handoffProgress?: (scrollTop: number, heroHeight: number) => number
+    wavefrontFactor?: (
+        cell: FabricCell,
+        pitch: number,
+        progress: number,
+        viewportHeight: number,
+    ) => number
+    handoffCellAlpha?: (
+        cell: FabricCell,
+        pitch: number,
+        progress: number,
+        viewportHeight: number,
+    ) => number
+    heroTextOpacity?: (progress: number) => number
+    buildContinuum?: (layout: FabricLayout, seed: number) => FabricCell[]
+}
+
+test('hero hand-off progress is tied to scroll and clamped to one pane', () => {
+    const progress = handoffApi.handoffProgress
+
+    assert.equal(typeof progress, 'function')
+    assert.equal(progress!(0, 800), 0)
+    assert.equal(progress!(400, 800), 0.5)
+    assert.equal(progress!(1200, 800), 1)
+    assert.equal(progress!(-40, 800), 0)
+    assert.equal(progress!(400, 0), 0)
+})
+
+test('the crumble wavefront clears the top while the About seam stays fully woven', () => {
+    const factor = handoffApi.wavefrontFactor
+    assert.equal(typeof factor, 'function')
+
+    const fabricCell: FabricCell = {
+        c: 0,
+        r: 50,
+        kind: KIND_GRAY_BASE,
+        alpha: 1,
+        sizeMul: 1,
+        handoffThreshold: 1,
+    }
+    const lingeringName: FabricCell = {
+        ...fabricCell,
+        kind: KIND_NAME,
+        handoffThreshold: 0.05,
+    }
+    const seamCell: FabricCell = { ...fabricCell, r: 79 }
+
+    assert.equal(factor!(fabricCell, 10, 0.5, 800), 0)
+    assert.ok(factor!(lingeringName, 10, 0.5, 800) > 0.7)
+    assert.equal(factor!(seamCell, 10, 0.5, 800), 1)
+})
+
+test('fabric cells receive deterministic jitter ranges and the name holds longest', () => {
+    const cells = buildFabric(LAYOUT, 42)
+    const nameThresholds = cells
+        .filter((cell) => cell.kind === KIND_NAME)
+        .map((cell) => cell.handoffThreshold)
+    const fabricThresholds = cells
+        .filter((cell) => cell.kind !== KIND_NAME)
+        .map((cell) => cell.handoffThreshold)
+
+    assert.ok(nameThresholds.length > 0)
+    assert.ok(nameThresholds.every((threshold) => threshold! >= 0.05 && threshold! < 0.45))
+    assert.ok(fabricThresholds.every((threshold) => threshold! >= 0.25 && threshold! < 1))
+    assert.deepEqual(cells, buildFabric(LAYOUT, 42))
+})
+
+test('the lower-left text void re-weaves with jitter as its copy fades away', () => {
+    const alpha = handoffApi.handoffCellAlpha
+    const textOpacity = handoffApi.heroTextOpacity
+    assert.equal(typeof alpha, 'function')
+    assert.equal(typeof textOpacity, 'function')
+
+    const fade = { c0: 0, r0: 60, c1: 50, r1: 79 }
+    const cell = buildFabric(LAYOUT, 42, fade).find(
+        (candidate) => candidate.c === 10 && candidate.r === 70,
+    )!
+
+    assert.equal(cell.alpha, 0)
+    assert.ok(cell.baseAlpha! > 0)
+    assert.equal(alpha!(cell, LAYOUT.pitch, 0, 800), 0)
+    assert.ok(alpha!(cell, LAYOUT.pitch, 0.25, 800) > 0)
+    assert.equal(textOpacity!(0), 1)
+    assert.ok(textOpacity!(0.08) > 0 && textOpacity!(0.08) < 1)
+    assert.equal(textOpacity!(0.2), 0)
+})
+
+test('the About continuum is full-density at the seam and gone by sixty-two percent', () => {
+    const build = handoffApi.buildContinuum
+    assert.equal(typeof build, 'function')
+
+    const layout: FabricLayout = { pitch: 10, cols: 120, rows: 100, clusterSize: 1 }
+    const cells = build!(layout, 42)
+    const seam = cells.filter((cell) => cell.r < 12)
+    const dissolved = cells.filter((cell) => cell.r >= 62)
+    const seamKinds = new Set(seam.map((cell) => cell.kind))
+
+    assert.equal(cells.length, layout.cols * layout.rows)
+    assert.ok(seam.every((cell) => cell.alpha > 0), 'the top twelve percent is a full weave')
+    assert.ok(KIND_ACCENTS.every((kind) => seamKinds.has(kind)), 'all accents reach the seam')
+    assert.ok(seamKinds.has(KIND_GRAY_BASE))
+    assert.ok(seamKinds.has(KIND_GRAY_MID))
+    assert.ok(seamKinds.has(KIND_GRAY_HI))
+    assert.ok(dissolved.every((cell) => cell.alpha === 0))
+    assert.deepEqual(cells, build!(layout, 42))
+    assert.notDeepEqual(cells, build!(layout, 43))
+})
