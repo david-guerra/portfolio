@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
 
@@ -16,6 +16,10 @@ test('the Pages build does not receive a third-party contact secret', () => {
         workflow,
         /VITE_WEB3FORMS_ACCESS_KEY|WEB3FORMS_ACCESS_KEY/i,
     )
+})
+
+test('the public bundle excludes the retired legacy portfolio screenshot', () => {
+    assert.equal(existsSync('public/portfolio-preview.png'), false)
 })
 
 test('the app carries no Web3Forms or hCaptcha code, configuration, or dependency', () => {
