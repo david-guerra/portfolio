@@ -3,6 +3,11 @@
 
 <head>
     <meta charset="UTF-8" />
+    <!-- GitHub Pages sends no response headers, so the policy rides in the document.
+         'wasm-unsafe-eval' is what the three C/WASM games need; the sha256 below
+         pins the theme script under it and is guarded by tests/security.test.ts. -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; base-uri 'none'; form-action 'none'; script-src 'self' 'wasm-unsafe-eval' 'sha256-Q0OxBDMB/4RJCphUfA4Dpp4EWIJKwLH2UVbXsEAVVGU='; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
         try {
