@@ -62,3 +62,12 @@ with its thumbnail.
 | `arcade-gallery-04-game-of-life-dark-thumbnail.png` | `arcade-gallery-04-game-of-life-dark.png` | PNG | 480 × 300 | 10,343 | **Current derivative** |
 | `applied-ai-carousel-thumbnail.png` | `applied-ai-carousel.png` | PNG | 480 × 270 | 127,627 | **Placeholder derivative** |
 | `compiler-carousel-thumbnail.png` | `compiler-carousel.png` | PNG | 480 × 270 | 163,206 | **Placeholder derivative** |
+
+## Social sharing
+
+The site-wide launch card lives at `public/og-image.png`. Replace it by overwriting that file and
+keeping the filename stable so the launch metadata does not need to change.
+
+| File | Slot | Status |
+| --- | --- | --- |
+| `../og-image.png` | Site-wide Open Graph/social preview | **Launch asset** — generated from `myReference/herodark.png`; manually replaceable at the same path |
