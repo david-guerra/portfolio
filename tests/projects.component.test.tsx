@@ -122,18 +122,108 @@ describe('Projects section', () => {
     test('resolves every public image through the configured Vite base path', async () => {
         vi.stubEnv('BASE_URL', '/portfolio/')
         vi.resetModules()
-        const { PROJECTS: basedProjects } = await import('../src/features/projects/projects.ts')
-        const images = basedProjects.flatMap((project) => [
-            project.carouselImage,
-            ...project.gallery.flatMap((item) => [item.image, item.thumbnailImage]),
-        ])
+        const { PROJECTS: basedProjects, projectImageForTheme } = await import(
+            '../src/features/projects/projects.ts'
+        )
+        const themes = ['dark', 'light'] as const
+        const images = basedProjects.flatMap((project) =>
+            themes.flatMap((theme) => [
+                projectImageForTheme(project.carouselImage, theme),
+                ...project.gallery.flatMap((item) => [
+                    projectImageForTheme(item.image, theme),
+                    projectImageForTheme(item.thumbnailImage, theme),
+                ]),
+            ]),
+        )
 
         expect(images.every((image) => image.startsWith('/portfolio/project-images/'))).toBe(true)
         expect(
             basedProjects.every((project) =>
-                project.gallery.every((item) => item.thumbnailImage.endsWith('-thumbnail.png')),
+                project.gallery.every((item) =>
+                    themes.every((theme) =>
+                        projectImageForTheme(item.thumbnailImage, theme).endsWith('-thumbnail.png'),
+                    ),
+                ),
             ),
         ).toBe(true)
+    })
+
+    test('switches only Arcade media with the manual theme', () => {
+        const { container, getByRole } = render(<App />)
+        const section = container.querySelector('#projects')
+        expect(section).not.toBeNull()
+        const projects = within(section as HTMLElement)
+        const carouselImages = projects.getAllByRole('img', {
+            name: 'Browser Arcade preview with its three C and WebAssembly games',
+        })
+
+        expect(carouselImages.length).toBeGreaterThan(0)
+        expect(
+            carouselImages.every((image) =>
+                image.getAttribute('src')?.endsWith('browser-arcade-carousel-dark.png'),
+            ),
+        ).toBe(true)
+        expect(section?.querySelector('img[src*="arcade-"][src*="-light"]')).toBeNull()
+        const cleanVoiceSources = projects
+            .getAllByRole('img', {
+                name: 'CleanVoice call-to-booking workflow design reference',
+            })
+            .map((image) => image.getAttribute('src'))
+
+        const desktop = within(projects.getByTestId('projects-desktop-content'))
+        fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
+        const gallery = within(getByRole('dialog'))
+
+        expect(
+            gallery
+                .getByRole('img', {
+                    name: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
+                })
+                .getAttribute('src'),
+        ).toMatch(/arcade-gallery-01-hub-dark\.png$/)
+        expect(
+            gallery
+                .getAllByRole('button', { name: /^Show .+ image$/ })
+                .map((button) => button.querySelector('img')?.getAttribute('src')),
+        ).toEqual([
+            expect.stringMatching(/arcade-gallery-01-hub-dark-thumbnail\.png$/),
+            expect.stringMatching(/arcade-gallery-02-connect-four-dark-thumbnail\.png$/),
+            expect.stringMatching(/arcade-gallery-03-sudoku-dark-thumbnail\.png$/),
+            expect.stringMatching(/arcade-gallery-04-game-of-life-dark-thumbnail\.png$/),
+        ])
+
+        fireEvent.click(getByRole('button', { name: 'Switch to light theme' }))
+
+        expect(
+            carouselImages.every((image) =>
+                image.getAttribute('src')?.endsWith('browser-arcade-carousel-light.png'),
+            ),
+        ).toBe(true)
+        expect(section?.querySelector('img[src*="arcade-"][src*="-dark"]')).toBeNull()
+        expect(
+            projects
+                .getAllByRole('img', {
+                    name: 'CleanVoice call-to-booking workflow design reference',
+                })
+                .map((image) => image.getAttribute('src')),
+        ).toEqual(cleanVoiceSources)
+        expect(
+            gallery
+                .getByRole('img', {
+                    name: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
+                })
+                .getAttribute('src'),
+        ).toMatch(/arcade-gallery-01-hub-light\.png$/)
+        expect(
+            gallery
+                .getAllByRole('button', { name: /^Show .+ image$/ })
+                .map((button) => button.querySelector('img')?.getAttribute('src')),
+        ).toEqual([
+            expect.stringMatching(/arcade-gallery-01-hub-light-thumbnail\.png$/),
+            expect.stringMatching(/arcade-gallery-02-connect-four-light-thumbnail\.png$/),
+            expect.stringMatching(/arcade-gallery-03-sudoku-light-thumbnail\.png$/),
+            expect.stringMatching(/arcade-gallery-04-game-of-life-light-thumbnail\.png$/),
+        ])
     })
 
     test('leads with the approved Arcade project and exact copy', () => {
@@ -517,7 +607,7 @@ describe('Projects section', () => {
         expect(galleryImage.classList).not.toContain('max-h-[48dvh]')
         expect(galleryImage.classList).not.toContain('wide:max-h-[50dvh]')
         expect(galleryImage.getAttribute('decoding')).toBe('async')
-        expect(galleryImage.getAttribute('src')).toMatch(/arcade-gallery-01-hub\.png$/)
+        expect(galleryImage.getAttribute('src')).toMatch(/arcade-gallery-01-hub-dark\.png$/)
 
         const galleryLayout = gallery.getByTestId('project-gallery-layout')
         const galleryMedia = gallery.getByTestId('project-gallery-media')

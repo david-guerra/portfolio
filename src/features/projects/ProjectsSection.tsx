@@ -1,7 +1,13 @@
 import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import SectionFrame from '../../components/SectionFrame.tsx'
+import type { Theme } from '../../lib/theme.ts'
 import ProjectGalleryDialog from './ProjectGalleryDialog.tsx'
-import { PROJECTS, type Project, type ProjectAccent } from './projects.ts'
+import {
+    PROJECTS,
+    projectImageForTheme,
+    type Project,
+    type ProjectAccent,
+} from './projects.ts'
 
 const FOCUS_RING =
     'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange'
@@ -62,10 +68,11 @@ function ArrowIcon({ direction }: ArrowIconProps) {
 }
 
 export interface ProjectsSectionProps {
+    theme?: Theme
     onScrollNext: () => void
 }
 
-export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) {
+export default function ProjectsSection({ theme = 'dark', onScrollNext }: ProjectsSectionProps) {
     const [projectIndex, setProjectIndex] = useState(0)
     const [galleryProject, setGalleryProject] = useState<Project | null>(null)
     const projectIndexRef = useRef(0)
@@ -294,7 +301,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                                 className={`relative block w-full cursor-pointer overflow-hidden border ${ACCENT_BORDER[item.accent]} ${FOCUS_RING}`}
                             >
                                 <img
-                                    src={item.carouselImage}
+                                    src={projectImageForTheme(item.carouselImage, theme)}
                                     alt={item.carouselAlt}
                                     loading="lazy"
                                     decoding="async"
@@ -426,7 +433,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                                 const cardContent = (
                                     <>
                                         <img
-                                            src={item.carouselImage}
+                                            src={projectImageForTheme(item.carouselImage, theme)}
                                             alt={isAccessibleCopy ? item.carouselAlt : ''}
                                             draggable="false"
                                             loading="lazy"
@@ -572,6 +579,7 @@ export default function ProjectsSection({ onScrollNext }: ProjectsSectionProps) 
                 <ProjectGalleryDialog
                     key={galleryProject.title}
                     project={galleryProject}
+                    theme={theme}
                     onClose={() => setGalleryProject(null)}
                     onPlayArcade={() => {
                         setGalleryProject(null)

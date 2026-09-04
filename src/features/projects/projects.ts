@@ -1,9 +1,13 @@
+import type { Theme } from '../../lib/theme.ts'
+
 export type ProjectAccent = 'teal' | 'lavender' | 'orange'
+
+export type ProjectImage = string | Readonly<Record<Theme, string>>
 
 export interface GalleryItem {
     label: string
-    image: string
-    thumbnailImage: string
+    image: ProjectImage
+    thumbnailImage: ProjectImage
     alt: string
 }
 
@@ -14,13 +18,17 @@ export interface Project {
     description: string
     action?: 'play-arcade'
     accent: ProjectAccent
-    carouselImage: string
+    carouselImage: ProjectImage
     carouselAlt: string
     gallery: readonly GalleryItem[]
     sourceUrl?: string
 }
 
 const projectImage = (filename: string) => `${import.meta.env.BASE_URL}project-images/${filename}`
+
+export function projectImageForTheme(image: ProjectImage, theme: Theme) {
+    return typeof image === 'string' ? image : image[theme]
+}
 
 export const PROJECTS: readonly Project[] = [
     {
@@ -31,31 +39,58 @@ export const PROJECTS: readonly Project[] = [
             'I wanted to see how much I could get the browser to handle on its own. Sudoku, Connect Four, and Game of Life are written in C and compiled to WebAssembly, with all of the game logic running on your machine.',
         action: 'play-arcade',
         accent: 'teal',
-        carouselImage: projectImage('browser-arcade-carousel.png'),
+        carouselImage: {
+            dark: projectImage('browser-arcade-carousel-dark.png'),
+            light: projectImage('browser-arcade-carousel-light.png'),
+        },
         carouselAlt: 'Browser Arcade preview with its three C and WebAssembly games',
         gallery: [
             {
                 label: 'Arcade hub',
-                image: projectImage('arcade-gallery-01-hub.png'),
-                thumbnailImage: projectImage('arcade-gallery-01-hub-thumbnail.png'),
+                image: {
+                    dark: projectImage('arcade-gallery-01-hub-dark.png'),
+                    light: projectImage('arcade-gallery-01-hub-light.png'),
+                },
+                thumbnailImage: {
+                    dark: projectImage('arcade-gallery-01-hub-dark-thumbnail.png'),
+                    light: projectImage('arcade-gallery-01-hub-light-thumbnail.png'),
+                },
                 alt: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
             },
             {
                 label: 'Connect Four',
-                image: projectImage('arcade-gallery-02-connect-four.png'),
-                thumbnailImage: projectImage('arcade-gallery-02-connect-four-thumbnail.png'),
+                image: {
+                    dark: projectImage('arcade-gallery-02-connect-four-dark.png'),
+                    light: projectImage('arcade-gallery-02-connect-four-light.png'),
+                },
+                thumbnailImage: {
+                    dark: projectImage('arcade-gallery-02-connect-four-dark-thumbnail.png'),
+                    light: projectImage('arcade-gallery-02-connect-four-light-thumbnail.png'),
+                },
                 alt: 'Connect Four game in progress against the browser bot',
             },
             {
                 label: 'Sudoku',
-                image: projectImage('arcade-gallery-03-sudoku.png'),
-                thumbnailImage: projectImage('arcade-gallery-03-sudoku-thumbnail.png'),
+                image: {
+                    dark: projectImage('arcade-gallery-03-sudoku-dark.png'),
+                    light: projectImage('arcade-gallery-03-sudoku-light.png'),
+                },
+                thumbnailImage: {
+                    dark: projectImage('arcade-gallery-03-sudoku-dark-thumbnail.png'),
+                    light: projectImage('arcade-gallery-03-sudoku-light-thumbnail.png'),
+                },
                 alt: 'Sudoku game in progress with its number controls',
             },
             {
                 label: 'Game of Life',
-                image: projectImage('arcade-gallery-04-game-of-life.png'),
-                thumbnailImage: projectImage('arcade-gallery-04-game-of-life-thumbnail.png'),
+                image: {
+                    dark: projectImage('arcade-gallery-04-game-of-life-dark.png'),
+                    light: projectImage('arcade-gallery-04-game-of-life-light.png'),
+                },
+                thumbnailImage: {
+                    dark: projectImage('arcade-gallery-04-game-of-life-dark-thumbnail.png'),
+                    light: projectImage('arcade-gallery-04-game-of-life-light-thumbnail.png'),
+                },
                 alt: 'Game of Life grid with a recognizable living pattern',
             },
         ],
