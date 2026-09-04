@@ -164,23 +164,49 @@ describe('Projects section', () => {
             ),
         ).toBe(true)
         expect(section?.querySelector('img[src*="arcade-"][src*="-light"]')).toBeNull()
-        const cleanVoiceSources = projects
-            .getAllByRole('img', {
-                name: 'CleanVoice call-to-booking workflow design reference',
-            })
-            .map((image) => image.getAttribute('src'))
+        const themeNeutralAlts = [
+            'CleanVoice call-to-booking workflow design reference',
+            'Fest source text beside its lexer output and language design notes',
+        ]
+        const themeNeutralSources = themeNeutralAlts.map((name) =>
+            projects.getAllByRole('img', { name }).map((image) => image.getAttribute('src')),
+        )
 
         const desktop = within(projects.getByTestId('projects-desktop-content'))
         fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
         const gallery = within(getByRole('dialog'))
+        const galleryFrames = [
+            [
+                'Arcade hub',
+                'Arcade hub showing Connect Four, Sudoku, and Game of Life',
+                '01-hub',
+            ],
+            [
+                'Connect Four',
+                'Connect Four game in progress against the browser bot',
+                '02-connect-four',
+            ],
+            [
+                'Sudoku',
+                'Sudoku game in progress with its number controls',
+                '03-sudoku',
+            ],
+            [
+                'Game of Life',
+                'Game of Life grid with a recognizable living pattern',
+                '04-game-of-life',
+            ],
+        ] as const
+        const expectGalleryTheme = (theme: 'dark' | 'light') => {
+            for (const [label, alt, basename] of galleryFrames) {
+                fireEvent.click(gallery.getByRole('button', { name: `Show ${label} image` }))
+                expect(gallery.getByRole('img', { name: alt }).getAttribute('src')).toMatch(
+                    new RegExp(`arcade-gallery-${basename}-${theme}\\.png$`),
+                )
+            }
+        }
 
-        expect(
-            gallery
-                .getByRole('img', {
-                    name: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
-                })
-                .getAttribute('src'),
-        ).toMatch(/arcade-gallery-01-hub-dark\.png$/)
+        expectGalleryTheme('dark')
         expect(
             gallery
                 .getAllByRole('button', { name: /^Show .+ image$/ })
@@ -201,19 +227,11 @@ describe('Projects section', () => {
         ).toBe(true)
         expect(section?.querySelector('img[src*="arcade-"][src*="-dark"]')).toBeNull()
         expect(
-            projects
-                .getAllByRole('img', {
-                    name: 'CleanVoice call-to-booking workflow design reference',
-                })
-                .map((image) => image.getAttribute('src')),
-        ).toEqual(cleanVoiceSources)
-        expect(
-            gallery
-                .getByRole('img', {
-                    name: 'Arcade hub showing Connect Four, Sudoku, and Game of Life',
-                })
-                .getAttribute('src'),
-        ).toMatch(/arcade-gallery-01-hub-light\.png$/)
+            themeNeutralAlts.map((name) =>
+                projects.getAllByRole('img', { name }).map((image) => image.getAttribute('src')),
+            ),
+        ).toEqual(themeNeutralSources)
+        expectGalleryTheme('light')
         expect(
             gallery
                 .getAllByRole('button', { name: /^Show .+ image$/ })
