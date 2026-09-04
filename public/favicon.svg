@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="David Guerra">
-  <rect width="64" height="64" rx="12" fill="#1d2021"/>
-  <path d="M10 16h44v32H10z" fill="#282828" stroke="#665c54" stroke-width="3"/>
-  <circle cx="17" cy="23" r="2.5" fill="#fb4934"/>
-  <circle cx="25" cy="23" r="2.5" fill="#fabd2f"/>
-  <circle cx="33" cy="23" r="2.5" fill="#b8bb26"/>
-  <text x="32" y="42" fill="#ebdbb2" font-family="ui-monospace, monospace" font-size="17" font-weight="700" text-anchor="middle">DG</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">David Guerra pixel monogram</title>
+  <rect width="64" height="64" rx="8" fill="#0d0d0f"/>
+  <g shape-rendering="crispEdges">
+    <path fill="#232327" d="M4 4h4v4H4zm12 0h4v4h-4zm12 0h4v4h-4zm12 0h4v4h-4zm12 0h4v4h-4zM4 56h4v4H4zm12 0h4v4h-4zm12 0h4v4h-4zm12 0h4v4h-4zm12 0h4v4h-4z"/>
+    <path fill="#f3e9d2" fill-rule="evenodd" d="M6 14h14l9 9v18l-9 9H6V14zm7 7v22h5l4-4V25l-4-4h-5zm29-7h16v7H45l-4 4v14l4 4h6v-7h-6v-7h13v21H42l-8-8V22l8-8z"/>
+    <path fill="#e8734a" d="M4 4h4v4H4z"/>
+    <path fill="#a48ef0" d="M52 8h4v4h-4z"/>
+    <path fill="#5cc9c4" d="M8 52h4v4H8z"/>
+    <path fill="#c3d94a" d="M56 56h4v4h-4z"/>
+  </g>
 </svg>

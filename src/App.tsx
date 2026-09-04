@@ -1,11 +1,15 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
 import Hero from './components/Hero.tsx'
 import SiteNav from './components/SiteNav.tsx'
 import AboutSection from './features/about/AboutSection.tsx'
 import ArcadeSection from './features/arcade/ArcadeSection.tsx'
 import { useContact } from './features/contact/contactContext.ts'
 import ProjectsSection from './features/projects/ProjectsSection.tsx'
-import { activeSection, type NavSection } from './lib/sections.ts'
+import {
+    activeSection,
+    legacyHashDestination,
+    type NavSection,
+} from './lib/sections.ts'
 import { resolveInitialTheme, toggleTheme, THEME_STORAGE_KEY, type Theme } from './lib/theme.ts'
 
 function readStoredTheme(): Theme {
@@ -28,7 +32,12 @@ export default function App() {
     const [heroSeed, setHeroSeed] = useState(() => (Math.random() * 1e9) | 0 || 1)
     const [heroPitch, setHeroPitch] = useState<number | null>(null)
     const scrollerRef = useRef<HTMLDivElement>(null)
+    const navContactRef = useRef<HTMLButtonElement>(null)
     const contact = useContact()
+    const openContactRoute = useEffectEvent(() => {
+        const trigger = navContactRef.current
+        if (contact && trigger) contact.openContact(trigger)
+    })
 
     const reshuffleHero = useCallback(() => {
         setHeroSeed((Math.random() * 1e9) | 0 || 1)
@@ -54,7 +63,7 @@ export default function App() {
         if (el) setActive(activeSection(el.scrollTop, el.clientHeight, renderedOffsets(el)))
     }
 
-    const scrollToSection = (section: NavSection) => {
+    const scrollToSection = useCallback((section: NavSection) => {
         const el = scrollerRef.current
         /* behavior comes from CSS scroll-behavior, so reduced motion turns smoothing off */
         const target = el?.querySelector<HTMLElement>(`#${section}`)
@@ -63,7 +72,31 @@ export default function App() {
             el.scrollTo({ top: target.offsetTop })
             target.focus({ preventScroll: true })
         }
-    }
+    }, [])
+
+    useLayoutEffect(() => {
+        const routeFromHash = () => {
+            const destination = legacyHashDestination(window.location.hash)
+            if (!destination) return
+
+            const canonicalHash = destination === 'home' ? '' : `#${destination}`
+            window.history.replaceState(
+                window.history.state,
+                '',
+                `${window.location.pathname}${window.location.search}${canonicalHash}`,
+            )
+
+            if (destination === 'contact') {
+                openContactRoute()
+                return
+            }
+            if (destination !== 'home') scrollToSection(destination)
+        }
+
+        routeFromHash()
+        window.addEventListener('hashchange', routeFromHash)
+        return () => window.removeEventListener('hashchange', routeFromHash)
+    }, [scrollToSection])
 
     const navigate = (section: NavSection) => scrollToSection(section)
 
@@ -75,6 +108,7 @@ export default function App() {
                 onNavigate={navigate}
                 onToggleTheme={() => setTheme(toggleTheme)}
                 onContact={(trigger) => contact?.openContact(trigger)}
+                contactButtonRef={navContactRef}
             />
             <div
                 ref={scrollerRef}

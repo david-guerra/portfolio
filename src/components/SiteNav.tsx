@@ -1,12 +1,16 @@
 import { PROFILE_LINKS } from '../content/profile.ts'
 import type { NavSection } from '../lib/sections.ts'
 import type { Theme } from '../lib/theme.ts'
+import type { RefObject } from 'react'
 
 const NAV_ITEMS: ReadonlyArray<readonly [NavSection, string]> = [
     ['about', 'About'],
     ['projects', 'Projects'],
     ['arcade', 'Arcade'],
 ]
+
+const FOCUS_RING =
+    'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange'
 
 interface SiteNavProps {
     active: NavSection | null
@@ -15,9 +19,17 @@ interface SiteNavProps {
     onToggleTheme: () => void
     /* Receives the trigger element so the contact dialog can restore focus to it. */
     onContact?: (trigger: HTMLElement) => void
+    contactButtonRef?: RefObject<HTMLButtonElement | null>
 }
 
-export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onContact }: SiteNavProps) {
+export default function SiteNav({
+    active,
+    theme,
+    onNavigate,
+    onToggleTheme,
+    onContact,
+    contactButtonRef,
+}: SiteNavProps) {
     return (
         <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 wide:px-14 wide:py-[22px]">
             <nav aria-label="Sections" className="flex items-center gap-3 wide:gap-8">
@@ -27,7 +39,7 @@ export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onCo
                         type="button"
                         onClick={() => onNavigate(section)}
                         aria-current={active === section ? 'true' : undefined}
-                        className={`cursor-pointer text-xs whitespace-nowrap transition-colors hover:text-ink wide:text-sm ${
+                        className={`cursor-pointer text-xs whitespace-nowrap transition-colors hover:text-ink wide:text-sm ${FOCUS_RING} ${
                             active === section ? 'text-ink' : 'text-dim'
                         }`}
                     >
@@ -47,7 +59,7 @@ export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onCo
                     target="_blank"
                     rel="noreferrer"
                     aria-label="GitHub"
-                    className="text-xs whitespace-nowrap text-olive wide:text-sm"
+                    className={`text-xs whitespace-nowrap text-olive wide:text-sm ${FOCUS_RING}`}
                 >
                     <span className="max-sm:hidden">GitHub ↗</span>
                     <span className="sm:hidden">GH ↗</span>
@@ -58,16 +70,17 @@ export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onCo
                     target="_blank"
                     rel="noreferrer"
                     aria-label="LinkedIn"
-                    className="text-xs whitespace-nowrap text-olive wide:text-sm"
+                    className={`text-xs whitespace-nowrap text-olive wide:text-sm ${FOCUS_RING}`}
                 >
                     <span className="max-sm:hidden">LinkedIn ↗</span>
                     <span className="sm:hidden">in ↗</span>
                     <span aria-hidden="true" className="mt-1 block h-px bg-olive wide:mt-1.5" />
                 </a>
                 <button
+                    ref={contactButtonRef}
                     type="button"
                     onClick={(event) => onContact?.(event.currentTarget)}
-                    className="cursor-pointer rounded-chip border border-orange px-2.5 py-1 text-xs text-orange transition-colors hover:bg-orange hover:text-bg wide:px-3.5 wide:py-1.5 wide:text-sm"
+                    className={`cursor-pointer rounded-chip border border-orange px-2.5 py-1 text-xs text-orange transition-colors hover:bg-orange hover:text-bg wide:px-3.5 wide:py-1.5 wide:text-sm ${FOCUS_RING}`}
                 >
                     Contact
                 </button>
@@ -75,7 +88,7 @@ export default function SiteNav({ active, theme, onNavigate, onToggleTheme, onCo
                     type="button"
                     onClick={onToggleTheme}
                     aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-                    className="cursor-pointer text-sm text-muted transition-colors hover:text-ink"
+                    className={`cursor-pointer text-sm text-muted transition-colors hover:text-ink ${FOCUS_RING}`}
                 >
                     {theme === 'dark' ? '◐' : '◑'}
                 </button>

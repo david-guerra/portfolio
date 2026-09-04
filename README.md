@@ -1,12 +1,10 @@
 # David Guerra — Portfolio
 
-Interactive browser games backed by C engines compiled to WebAssembly, kept off
-the main thread with Web Workers.
+A responsive portfolio built around a pixel-canvas identity, project galleries,
+and three playable browser games backed by C engines compiled to WebAssembly.
+The game engines stay off the main thread in Web Workers.
 
-[View the live site](https://david-guerra.github.io/portfolio/) — currently a
-placeholder: the portfolio is being rebuilt on a fresh scaffold
-([map](https://github.com/david-guerra/portfolio/issues/1)). The previous app
-lives untouched in `legacy/` until launch.
+[View the live site](https://david-guerra.github.io/portfolio/).
 
 ## Architecture
 
@@ -43,10 +41,22 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run check:budget
 ```
 
 `npm test` drives the three real workers against the shipped `.wasm` engines
 under Node's test runner (see `tests/helpers/worker-harness.ts`).
+
+The launch budget caps the application entry bundle at 100 KiB gzip for
+JavaScript and 16 KiB gzip for CSS. CI checks both limits after every build.
+
+## Launch posture
+
+- No analytics or tracking. The shipped page makes no external requests.
+- A restrictive meta CSP allows only the same-origin assets and WebAssembly
+  workers the portfolio needs.
+- Retired hash routes redirect into the current About, Projects, Arcade, and
+  contact surfaces.
 
 The Connect 4 native test can be rebuilt without writing a binary into the
 repository:

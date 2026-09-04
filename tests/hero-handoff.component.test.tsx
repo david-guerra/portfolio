@@ -99,6 +99,13 @@ function renderHero() {
 }
 
 describe('Hero -> About hand-off', () => {
+    test('gives the scroll cue the brand focus indicator', () => {
+        const { cue } = renderHero()
+
+        expect(cue.classList).toContain('focus-visible:outline-2')
+        expect(cue.classList).toContain('focus-visible:outline-orange')
+    })
+
     test('scroll progress fades the copy and repaints the crumble wavefront', () => {
         const { scroller, copy, cue } = renderHero()
         context.clearRect.mockClear()
