@@ -17,7 +17,7 @@
     --text: #f3e9d2;
     --text-body: #d8d4c8;
     --text-secondary: #8f8b7f;
-    --muted: #7a7a78;
+    --muted: #85817a;
     --orange: #e8734a;
     --olive: #c3d94a;
     --lavender: #a48ef0;
@@ -40,11 +40,11 @@
     --text: #1a1a1c;
     --text-body: #33322e;
     --text-secondary: #6b675c;
-    --muted: #8a8577;
-    --orange: #e85a36;
-    --olive: #a8b01f;
-    --lavender: #7c64d4;
-    --teal: #45938e;
+    --muted: #6f6a5e;
+    --orange: #a83c22;
+    --olive: #646b00;
+    --lavender: #684fbe;
+    --teal: #28716d;
     --about-muted-text: #6f6a5e;
     --about-orange-text: #a83c22;
     --about-olive-text: #646b00;
@@ -119,5 +119,17 @@
     ::selection {
         background: var(--color-orange);
         color: var(--color-bg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root,
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

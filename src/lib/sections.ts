@@ -1,4 +1,5 @@
 export type NavSection = 'about' | 'projects' | 'arcade'
+export type LaunchDestination = NavSection | 'contact' | 'home'
 
 export interface SectionOffsets {
     about: number
@@ -7,6 +8,23 @@ export interface SectionOffsets {
 }
 
 const NAV_SECTIONS: NavSection[] = ['about', 'projects', 'arcade']
+
+const LEGACY_HASH_DESTINATIONS: Readonly<Record<string, LaunchDestination>> = {
+    '#about': 'about',
+    '#projects': 'projects',
+    '#arcade': 'arcade',
+    '#contact': 'contact',
+    '#/': 'about',
+    '#/about': 'about',
+    '#/projects': 'projects',
+    '#/arcade': 'arcade',
+    '#/contact': 'contact',
+    '#/blog': 'home',
+}
+
+export function legacyHashDestination(hash: string): LaunchDestination | null {
+    return LEGACY_HASH_DESTINATIONS[hash.toLowerCase()] ?? null
+}
 
 function equalPaneOffsets(viewportHeight: number): SectionOffsets {
     return {

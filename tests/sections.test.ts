@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { activeSection } from '../src/lib/sections.ts'
+import { activeSection, legacyHashDestination } from '../src/lib/sections.ts'
 
 const VIEWPORT = 800
 
@@ -33,4 +33,21 @@ test('rendered section starts support a taller mobile About section', () => {
     assert.equal(activeSection(1700, VIEWPORT, offsets), 'about')
     assert.equal(activeSection(2000, VIEWPORT, offsets), 'projects')
     assert.equal(activeSection(2800, VIEWPORT, offsets), 'arcade')
+})
+
+test('legacy hash routes resolve to their current launch destinations', () => {
+    assert.equal(legacyHashDestination('#/about'), 'about')
+    assert.equal(legacyHashDestination('#/projects'), 'projects')
+    assert.equal(legacyHashDestination('#/arcade'), 'arcade')
+    assert.equal(legacyHashDestination('#/contact'), 'contact')
+    assert.equal(legacyHashDestination('#/blog'), 'home')
+    assert.equal(legacyHashDestination('#not-a-route'), null)
+})
+
+test('canonical launch hashes survive reloads through the same router seam', () => {
+    assert.equal(legacyHashDestination('#about'), 'about')
+    assert.equal(legacyHashDestination('#projects'), 'projects')
+    assert.equal(legacyHashDestination('#arcade'), 'arcade')
+    assert.equal(legacyHashDestination('#contact'), 'contact')
+    assert.equal(legacyHashDestination(''), null)
 })
