@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Project, ProjectAccent } from './projects.ts'
+import type { Theme } from '../../lib/theme.ts'
+import { projectImageForTheme, type Project, type ProjectAccent } from './projects.ts'
 
 const FOCUS_RING =
     'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange'
@@ -36,12 +37,14 @@ function GalleryArrow({ direction }: GalleryArrowProps) {
 
 export interface ProjectGalleryDialogProps {
     project: Project
+    theme?: Theme
     onClose: () => void
     onPlayArcade: () => void
 }
 
 export default function ProjectGalleryDialog({
     project,
+    theme = 'dark',
     onClose,
     onPlayArcade,
 }: ProjectGalleryDialogProps) {
@@ -97,7 +100,7 @@ export default function ProjectGalleryDialog({
                             className={`shrink-0 overflow-hidden border bg-bg ${ACCENT_BORDER[project.accent]}`}
                         >
                             <img
-                                src={image.image}
+                                src={projectImageForTheme(image.image, theme)}
                                 alt={image.alt}
                                 decoding="async"
                                 className="block h-auto w-full object-contain"
@@ -119,7 +122,7 @@ export default function ProjectGalleryDialog({
                                     } ${FOCUS_RING}`}
                                 >
                                     <img
-                                        src={item.thumbnailImage}
+                                        src={projectImageForTheme(item.thumbnailImage, theme)}
                                         alt=""
                                         loading="lazy"
                                         decoding="async"

@@ -100,7 +100,10 @@ export default function App() {
                     onSayHello={(trigger) => contact?.openContact(trigger)}
                     onScrollNext={() => scrollToSection('projects')}
                 />
-                <ProjectsSection onScrollNext={() => scrollToSection('arcade')} />
+                <ProjectsSection
+                    theme={theme}
+                    onScrollNext={() => scrollToSection('arcade')}
+                />
                 <ArcadeSection
                     theme={theme}
                     keyboardActive={active === 'arcade'}
