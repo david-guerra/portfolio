@@ -45,9 +45,13 @@ describe('Projects section', () => {
             'Language design · C++ · Lexer complete',
         ])
         expect(PROJECTS.map(({ gallery }) => gallery.length)).toEqual([4, 1, 1])
-        expect(PROJECTS.every(({ sourceUrl }) => sourceUrl === undefined)).toBe(true)
+        expect(PROJECTS.map(({ sourceUrl }) => sourceUrl)).toEqual([
+            undefined,
+            'https://github.com/david-guerra/CleanVoice',
+            undefined,
+        ])
         expect(PROJECTS[1]?.description).toBe(
-            'The hackathon brief was to build an AI voice app with LiveKit. Our team turned it into CleanVoice, a business partner for independent cleaners facing a language barrier with German-speaking clients. The working demo turned a German-language call into a tentative booking shaped by cleaner preferences, then surfaced it in a realtime dashboard with multilingual summaries. I worked primarily on the agent and its data layer.',
+            'Our team built CleanVoice at a LiveKit hackathon to help independent cleaners communicate with German-speaking clients. The prototype turns a German-language call into a tentative booking and shows it in a realtime dashboard with multilingual summaries. I built the voice agent and later helped integrate and refine the frontend and backend.',
         )
         expect(PROJECTS[2]?.description).toBe(
             'Rust and I didn’t quite click, so I did the sensible thing and started designing a language in C++. Fest currently has a full specification and a working lexer; the goal is a statically typed language targeting WebAssembly.',
