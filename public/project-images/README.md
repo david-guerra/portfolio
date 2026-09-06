@@ -6,7 +6,7 @@ images preserve the source capture's native composition.
 
 The Arcade captures were taken from the shipped portfolio and its production builds across
 2026-09-03–04 at commits `57c35be` and `5ed644a`. Each Arcade slot has a light and dark capture;
-the manual site theme selects the matching file, while CleanVoice and Fest keep their existing
+the manual site theme selects the matching file, while Yoshida and Fest keep their existing
 theme-neutral images. The captures intentionally use still PNGs: motion does not add enough
 context to justify autoplay, reduced-motion branching, or a larger default download.
 
@@ -24,7 +24,7 @@ bytes (~597 KiB), and every individual file is below its cap. Both sets occupy 1
 | --- | --- | --- | --- | --- | ---: | --- |
 | `browser-arcade-carousel-light.png` | 01 · Arcade, compiled · light | Production Arcade hub, light desktop capture | PNG | 1600 × 900 | 149,919 | **Current capture** |
 | `browser-arcade-carousel-dark.png` | 01 · Arcade, compiled · dark | Production Arcade hub, dark desktop capture | PNG | 1600 × 900 | 142,435 | **Current capture** |
-| `applied-ai-carousel.png` | 02 · CleanVoice | Claude Design `assets/project-agent.png` | PNG | 1672 × 941 | 1,085,045 | **Placeholder** — replace after the CleanVoice showcase cleanup |
+| `applied-ai-carousel.png` | 02 · Yoshida | Claude Design `assets/project-agent.png` | PNG | 1672 × 941 | 1,085,045 | **Placeholder** — replace after the Yoshida showcase cleanup |
 | `compiler-carousel.png` | 03 · Fest | Claude Design `assets/project-compiler.png` | PNG | 1672 × 941 | 1,314,786 | **Placeholder** — Fest is currently at lexer-complete stage |
 
 ## Arcade gallery

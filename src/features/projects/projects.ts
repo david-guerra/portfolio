@@ -96,20 +96,21 @@ export const PROJECTS: readonly Project[] = [
         ],
     },
     {
-        title: 'CleanVoice',
+        title: 'Yoshida',
+        sourceUrl: 'https://github.com/david-guerra/Yoshida',
         tag: 'Voice AI · LiveKit',
         status: 'Hackathon prototype',
         description:
-            'The hackathon brief was to build an AI voice app with LiveKit. Our team turned it into CleanVoice, a business partner for independent cleaners facing a language barrier with German-speaking clients. The working demo turned a German-language call into a tentative booking shaped by cleaner preferences, then surfaced it in a realtime dashboard with multilingual summaries. I worked primarily on the agent and its data layer.',
+            'Our team built Yoshida at a LiveKit hackathon to help independent cleaners communicate with German-speaking clients. The prototype turns a German-language call into a tentative booking and shows it in a realtime dashboard with multilingual summaries. I built the voice agent and later helped integrate and refine the frontend and backend.',
         accent: 'lavender',
         carouselImage: projectImage('applied-ai-carousel.png'),
-        carouselAlt: 'CleanVoice call-to-booking workflow design reference',
+        carouselAlt: 'Yoshida call-to-booking workflow design reference',
         gallery: [
             {
                 label: 'Overview',
                 image: projectImage('applied-ai-carousel.png'),
                 thumbnailImage: projectImage('applied-ai-carousel-thumbnail.png'),
-                alt: 'CleanVoice call-to-booking workflow design reference',
+                alt: 'Yoshida call-to-booking workflow design reference',
             },
         ],
     },
