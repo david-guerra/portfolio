@@ -521,7 +521,7 @@ export default function Hero({ theme, seed, onReseed, onLayout, onScrollNext }: 
                 ref={cueRef}
                 type="button"
                 onClick={onScrollNext}
-                className="absolute right-5 bottom-8 cursor-pointer text-meta text-muted transition-colors hover:text-body wide:right-14 wide:bottom-14"
+                className="absolute right-5 bottom-8 cursor-pointer text-meta text-muted transition-colors hover:text-body focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange wide:right-14 wide:bottom-14"
             >
                 scroll <span className="text-[15px]">↓</span>
             </button>
