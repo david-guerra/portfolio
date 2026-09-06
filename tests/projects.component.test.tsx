@@ -36,7 +36,7 @@ describe('Projects section', () => {
     test('keeps the approved order, maturity claims, and publishable gallery boundaries', () => {
         expect(PROJECTS.map(({ title }) => title)).toEqual([
             'Arcade, compiled',
-            'CleanVoice',
+            'Yoshida',
             'Fest',
         ])
         expect(PROJECTS.map(({ tag, status }) => `${tag} · ${status}`)).toEqual([
@@ -47,11 +47,11 @@ describe('Projects section', () => {
         expect(PROJECTS.map(({ gallery }) => gallery.length)).toEqual([4, 1, 1])
         expect(PROJECTS.map(({ sourceUrl }) => sourceUrl)).toEqual([
             undefined,
-            'https://github.com/david-guerra/CleanVoice',
+            'https://github.com/david-guerra/Yoshida',
             undefined,
         ])
         expect(PROJECTS[1]?.description).toBe(
-            'Our team built CleanVoice at a LiveKit hackathon to help independent cleaners communicate with German-speaking clients. The prototype turns a German-language call into a tentative booking and shows it in a realtime dashboard with multilingual summaries. I built the voice agent and later helped integrate and refine the frontend and backend.',
+            'Our team built Yoshida at a LiveKit hackathon to help independent cleaners communicate with German-speaking clients. The prototype turns a German-language call into a tentative booking and shows it in a realtime dashboard with multilingual summaries. I built the voice agent and later helped integrate and refine the frontend and backend.',
         )
         expect(PROJECTS[2]?.description).toBe(
             'Rust and I didn’t quite click, so I did the sensible thing and started designing a language in C++. Fest currently has a full specification and a working lexer; the goal is a statically typed language targeting WebAssembly.',
@@ -178,7 +178,7 @@ describe('Projects section', () => {
         expect(section).not.toBeNull()
 
         fireEvent.click(getByRole('button', { name: 'Next project' }))
-        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+        expect(getByRole('heading', { level: 2, name: 'Yoshida' })).toBeTruthy()
         expect(getByText('02 / 03')).toBeTruthy()
 
         fireEvent.click(getByRole('button', { name: 'Previous project' }))
@@ -241,7 +241,7 @@ describe('Projects section', () => {
         const projectIndex = getByRole('navigation', { name: 'Project index' })
         const cards = rail.querySelectorAll('[data-project-card]')
         const selected = getByRole('button', { name: 'Open Arcade, compiled gallery' })
-        const inactive = getByRole('button', { name: 'Center project: CleanVoice' })
+        const inactive = getByRole('button', { name: 'Center project: Yoshida' })
 
         expect(rail.classList).toContain('snap-x')
         expect(rail.classList).toContain('snap-mandatory')
@@ -257,7 +257,7 @@ describe('Projects section', () => {
         expect(selected.classList).toContain('border-teal')
         expect(selected.classList).toContain('z-10')
         expect(inactive.querySelector('img')?.classList).toContain('brightness-[0.64]')
-        expect(within(inactive).getByText('CleanVoice')).toBeTruthy()
+        expect(within(inactive).getByText('Yoshida')).toBeTruthy()
         expect(within(inactive).getByText('View project →')).toBeTruthy()
         expect(rail.querySelector('[data-rail-copy="leading"]')?.tagName).toBe('DIV')
         expect(rail.querySelector('[data-rail-copy="middle"]')?.tagName).toBe('BUTTON')
@@ -324,7 +324,7 @@ describe('Projects section', () => {
         })
 
         fireEvent.scroll(rail)
-        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+        expect(getByRole('heading', { level: 2, name: 'Yoshida' })).toBeTruthy()
 
         fireEvent.click(getByRole('button', { name: 'Previous project' }))
 
@@ -348,7 +348,7 @@ describe('Projects section', () => {
         })
 
         fireEvent.scroll(rail)
-        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+        expect(getByRole('heading', { level: 2, name: 'Yoshida' })).toBeTruthy()
 
         fireEvent.click(getByRole('button', { name: 'Next project' }))
 
@@ -425,7 +425,7 @@ describe('Projects section', () => {
         Object.defineProperty(deck, 'scrollTo', { configurable: true, value: scrollTo })
         fireEvent.scroll(deck, { target: { scrollLeft: 328 } })
         expect(getByText('02 / 03')).toBeTruthy()
-        expect(getByRole('heading', { level: 2, name: 'CleanVoice' })).toBeTruthy()
+        expect(getByRole('heading', { level: 2, name: 'Yoshida' })).toBeTruthy()
         expect(scrollTo).not.toHaveBeenCalled()
 
         fireEvent.click(getByRole('button', { name: 'Show Fest' }))
@@ -447,7 +447,7 @@ describe('Projects section', () => {
         fireEvent.keyDown(section as HTMLElement, { key: 'ArrowRight' })
 
         expect(getByText('02 / 03')).toBeTruthy()
-        expect(getByRole('button', { name: 'Show CleanVoice' }).getAttribute('aria-pressed')).toBe(
+        expect(getByRole('button', { name: 'Show Yoshida' }).getAttribute('aria-pressed')).toBe(
             'true',
         )
         expect(scrollTo).toHaveBeenCalledWith({ left: 361 })
@@ -582,7 +582,7 @@ describe('Projects section', () => {
             <ProjectsSection onScrollNext={() => undefined} />,
         )
 
-        fireEvent.click(getByRole('button', { name: 'Select project: CleanVoice' }))
+        fireEvent.click(getByRole('button', { name: 'Select project: Yoshida' }))
         const desktop = within(getByTestId('projects-desktop-content'))
         fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
 
