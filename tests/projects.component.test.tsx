@@ -169,7 +169,7 @@ describe('Projects section', () => {
         ).toBe(true)
         expect(section?.querySelector('img[src*="arcade-"][src*="-light"]')).toBeNull()
         const themeNeutralAlts = [
-            'CleanVoice call-to-booking workflow design reference',
+            'Yoshida call-to-booking workflow design reference',
             'Fest source text beside its lexer output and language design notes',
         ]
         const themeNeutralSources = themeNeutralAlts.map((name) =>
