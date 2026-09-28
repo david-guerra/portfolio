@@ -39,6 +39,7 @@ test('the page carries a locked-down Content Security Policy', () => {
     assert.deepEqual(directive('font-src'), ["'self'"])
     assert.deepEqual(directive('worker-src'), ["'self'"])
     assert.deepEqual(directive('img-src'), ["'self'", 'data:'])
+    assert.deepEqual(directive('media-src'), ["'self'"])
 })
 
 test('the policy admits WebAssembly without admitting eval or inline script', () => {

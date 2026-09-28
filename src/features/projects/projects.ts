@@ -9,6 +9,11 @@ export interface GalleryItem {
     image: ProjectImage
     thumbnailImage: ProjectImage
     alt: string
+    caption?: string
+    video?: {
+        src: string
+        captions: string
+    }
 }
 
 export interface Project {
@@ -25,6 +30,7 @@ export interface Project {
 }
 
 const projectImage = (filename: string) => `${import.meta.env.BASE_URL}project-images/${filename}`
+const projectVideo = (filename: string) => `${import.meta.env.BASE_URL}project-videos/${filename}`
 
 export function projectImageForTheme(image: ProjectImage, theme: Theme) {
     return typeof image === 'string' ? image : image[theme]
@@ -103,14 +109,76 @@ export const PROJECTS: readonly Project[] = [
         description:
             'Our team built Yoshida at a LiveKit hackathon to help independent cleaners communicate with German-speaking clients. The prototype turns a German-language call into a tentative booking and shows it in a realtime dashboard with multilingual summaries. I built the voice agent and later helped integrate and refine the frontend and backend.',
         accent: 'lavender',
-        carouselImage: projectImage('applied-ai-carousel.png'),
-        carouselAlt: 'Yoshida call-to-booking workflow design reference',
+        carouselImage: projectImage('yoshida-cleaner-requests.jpg'),
+        carouselAlt: 'Yoshida cleaner dashboard showing a tentative request awaiting review',
         gallery: [
             {
-                label: 'Overview',
-                image: projectImage('applied-ai-carousel.png'),
-                thumbnailImage: projectImage('applied-ai-carousel-thumbnail.png'),
-                alt: 'Yoshida call-to-booking workflow design reference',
+                label: 'Demo video',
+                image: projectImage('yoshida-demo-poster.jpg'),
+                thumbnailImage: projectImage('yoshida-demo-poster-thumbnail.jpg'),
+                alt: 'Illustrated Yoshida cleaner dashboard with a tentative request',
+                caption:
+                    'A 58-second silent illustrative replay follows a fictional booking through cleaner review and confirmation. The final shot is an actual app capture; the replay is not footage of a live call.',
+                video: {
+                    src: projectVideo('yoshida-silent-demo.mp4'),
+                    captions: projectVideo('yoshida-silent-demo.vtt'),
+                },
+            },
+            {
+                label: 'Caller receipt',
+                image: projectImage('yoshida-caller-receipt.jpg'),
+                thumbnailImage: projectImage('yoshida-caller-receipt-thumbnail.jpg'),
+                alt: 'German browser call simulator showing a saved tentative receipt after hang-up',
+                caption:
+                    'Reconstructed from a saved verified call in a disposable local copy. The request remains tentative until the cleaner confirms it.',
+            },
+            {
+                label: 'Needs review',
+                image: projectImage('yoshida-cleaner-requests.jpg'),
+                thumbnailImage: projectImage('yoshida-cleaner-requests-thumbnail.jpg'),
+                alt: 'Yoshida cleaner dashboard showing a fictional booking in Needs review',
+                caption:
+                    'This persisted example request was staged through the manual form, rather than created by a voice call.',
+            },
+            {
+                label: 'Request details',
+                image: projectImage('yoshida-cleaner-review.jpg'),
+                thumbnailImage: projectImage('yoshida-cleaner-review-thumbnail.jpg'),
+                alt: 'Cleaner review drawer with appointment details, address, service, and unknown price',
+                caption:
+                    'The cleaner can review the appointment and unknown price before deciding. This is the staged example request.',
+            },
+            {
+                label: 'Decision controls',
+                image: projectImage('yoshida-cleaner-decision-controls.jpg'),
+                thumbnailImage: projectImage('yoshida-cleaner-decision-controls-thumbnail.jpg'),
+                alt: 'Lower part of the cleaner review drawer showing Decline and Confirm controls',
+                caption:
+                    'The same staged request, scrolled to its decision controls. No decision was taken on this record.',
+            },
+            {
+                label: 'Confirmed',
+                image: projectImage('yoshida-cleaner-confirmed.jpg'),
+                thumbnailImage: projectImage('yoshida-cleaner-confirmed-thumbnail.jpg'),
+                alt: 'Confirmed appointment from a spoken call in the cleaner dashboard Upcoming tab',
+                caption:
+                    'A persisted confirmed appointment from a verified fictional German spoken call.',
+            },
+            {
+                label: 'Declined',
+                image: projectImage('yoshida-cleaner-declined.jpg'),
+                thumbnailImage: projectImage('yoshida-cleaner-declined-thumbnail.jpg'),
+                alt: 'Declined request with a budget warning in the cleaner dashboard History tab',
+                caption:
+                    'A persisted declined request from another verified fictional German spoken call. Its below-minimum budget was a warning, not an automatic rejection.',
+            },
+            {
+                label: 'Mobile view',
+                image: projectImage('yoshida-cleaner-mobile.jpg'),
+                thumbnailImage: projectImage('yoshida-cleaner-mobile-thumbnail.jpg'),
+                alt: 'Yoshida cleaner Requests inbox in a 375-pixel-wide mobile viewport',
+                caption:
+                    'The staged example request in the running cleaner dashboard at a 375-pixel mobile width.',
             },
         ],
     },

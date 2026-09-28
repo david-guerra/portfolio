@@ -6,9 +6,9 @@ images preserve the source capture's native composition.
 
 The Arcade captures were taken from the shipped portfolio and its production builds across
 2026-09-03–04 at commits `57c35be` and `5ed644a`. Each Arcade slot has a light and dark capture;
-the manual site theme selects the matching file, while Yoshida and Fest keep their existing
-theme-neutral images. The captures intentionally use still PNGs: motion does not add enough
-context to justify autoplay, reduced-motion branching, or a larger default download.
+the manual site theme selects the matching file. Yoshida uses theme-neutral captures from its
+[public showcase](https://github.com/david-guerra/Yoshida/blob/main/docs/showcase.md), made with
+fictional data. Its optional silent video uses `preload="none"` and appears only in the gallery.
 
 ## Performance budget
 
@@ -24,7 +24,7 @@ bytes (~597 KiB), and every individual file is below its cap. Both sets occupy 1
 | --- | --- | --- | --- | --- | ---: | --- |
 | `browser-arcade-carousel-light.png` | 01 · Arcade, compiled · light | Production Arcade hub, light desktop capture | PNG | 1600 × 900 | 149,919 | **Current capture** |
 | `browser-arcade-carousel-dark.png` | 01 · Arcade, compiled · dark | Production Arcade hub, dark desktop capture | PNG | 1600 × 900 | 142,435 | **Current capture** |
-| `applied-ai-carousel.png` | 02 · Yoshida | Claude Design `assets/project-agent.png` | PNG | 1672 × 941 | 1,085,045 | **Placeholder** — replace after the Yoshida showcase cleanup |
+| `yoshida-cleaner-requests.jpg` | 02 · Yoshida | Yoshida cleaner dashboard, staged tentative request | JPEG | 1280 × 720 | 51,769 | **Current capture** |
 | `compiler-carousel.png` | 03 · Fest | Claude Design `assets/project-compiler.png` | PNG | 1672 × 941 | 1,314,786 | **Placeholder** — Fest is currently at lexer-complete stage |
 
 ## Arcade gallery
@@ -44,11 +44,41 @@ Each light/dark pair uses identical dimensions, so changing the theme does not s
 layout. The set deliberately covers desktop and responsive compositions. The gallery keeps the
 existing descriptive alternative text and renders each capture at its native aspect ratio.
 
+## Yoshida gallery
+
+These files come from `david-guerra/Yoshida/docs/media` on 2026-09-25. The source showcase
+documents each image's provenance: the caller receipt was reconstructed from a saved verified
+call, the tentative request and review screens were staged through the real manual form, and the
+confirmed and declined records came from two verified fictional spoken calls. The video is a
+silent illustrative replay with timed text, ending on an actual app capture. It is not footage
+of a live call. The portfolio repeats these distinctions in the gallery captions.
+
+| File | Gallery item | Dimensions | Bytes |
+| --- | --- | --- | ---: |
+| `yoshida-demo-poster.jpg` | Demo video poster, frame from the illustrated replay | 1600 × 900 | 64,849 |
+| `yoshida-caller-receipt.jpg` | Caller receipt | 1280 × 720 | 61,865 |
+| `yoshida-cleaner-requests.jpg` | Needs review and carousel | 1280 × 720 | 51,769 |
+| `yoshida-cleaner-review.jpg` | Request details | 1280 × 720 | 40,509 |
+| `yoshida-cleaner-decision-controls.jpg` | Decision controls | 1280 × 720 | 37,527 |
+| `yoshida-cleaner-confirmed.jpg` | Confirmed | 1280 × 720 | 52,978 |
+| `yoshida-cleaner-declined.jpg` | Declined | 1280 × 720 | 52,887 |
+| `yoshida-cleaner-mobile.jpg` | Mobile view | 375 × 812 | 28,416 |
+
+Each Yoshida still and poster has a `-thumbnail.jpg` derivative, at most 480 × 270 pixels.
+The portrait mobile capture is centered in a 480 × 270 thumbnail so its full height stays visible.
+The eight thumbnails total under 90 KiB. The original JPEGs contain no EXIF, IPTC, or XMP
+metadata, per the source showcase. The video and WebVTT file live in `../project-videos/`:
+
+| File | Format | Dimensions / duration | Bytes |
+| --- | --- | --- | ---: |
+| `yoshida-silent-demo.mp4` | H.264 MP4 | 1600 × 900 / 58 seconds | 3,623,760 |
+| `yoshida-silent-demo.vtt` | WebVTT timed text | 58 seconds | 784 |
+
 ## Gallery thumbnails
 
-Gallery thumbnail derivatives use the original basename plus `-thumbnail.png`. Regenerate them
-from the full-resolution source with a maximum dimension of 480px; never replace the full source
-with its thumbnail.
+The PNG gallery thumbnail derivatives use the original basename plus `-thumbnail.png`.
+Regenerate them from the full-resolution source with a maximum dimension of 480px; never replace
+the full source with its thumbnail. Yoshida's JPEG derivatives are listed above.
 
 | Thumbnail | Full-resolution source | Format | Dimensions | Bytes | Status |
 | --- | --- | --- | --- | ---: | --- |
@@ -60,7 +90,6 @@ with its thumbnail.
 | `arcade-gallery-03-sudoku-dark-thumbnail.png` | `arcade-gallery-03-sudoku-dark.png` | PNG | 480 × 300 | 8,561 | **Current derivative** |
 | `arcade-gallery-04-game-of-life-light-thumbnail.png` | `arcade-gallery-04-game-of-life-light.png` | PNG | 480 × 300 | 13,338 | **Current derivative** |
 | `arcade-gallery-04-game-of-life-dark-thumbnail.png` | `arcade-gallery-04-game-of-life-dark.png` | PNG | 480 × 300 | 10,343 | **Current derivative** |
-| `applied-ai-carousel-thumbnail.png` | `applied-ai-carousel.png` | PNG | 480 × 270 | 127,627 | **Placeholder derivative** |
 | `compiler-carousel-thumbnail.png` | `compiler-carousel.png` | PNG | 480 × 270 | 163,206 | **Placeholder derivative** |
 
 ## Social sharing

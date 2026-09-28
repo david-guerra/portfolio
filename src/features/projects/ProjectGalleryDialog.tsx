@@ -89,30 +89,57 @@ export default function ProjectGalleryDialog({
 
                 <div
                     data-testid="project-gallery-layout"
-                    className="grid min-h-0 min-w-0 flex-1 gap-6 overflow-y-auto wide:grid-cols-[minmax(0,2fr)_minmax(260px,0.9fr)] wide:gap-8 wide:overflow-hidden"
+                    className="flex min-h-0 min-w-0 flex-1 flex-col gap-6 overflow-y-auto wide:grid wide:grid-cols-[minmax(0,2fr)_minmax(260px,0.9fr)] wide:gap-8 wide:overflow-hidden"
                 >
                     <div
                         data-testid="project-gallery-media"
-                        className="flex min-h-0 min-w-0 flex-col wide:overflow-y-auto wide:border-r wide:border-border wide:pr-8"
+                        className="flex min-h-0 min-w-0 shrink-0 flex-col wide:shrink wide:overflow-y-auto wide:border-r wide:border-border wide:pr-8"
                     >
                         <div
                             data-testid="project-gallery-frame"
                             className={`shrink-0 overflow-hidden border bg-bg ${ACCENT_BORDER[project.accent]}`}
                         >
-                            <img
-                                src={projectImageForTheme(image.image, theme)}
-                                alt={image.alt}
-                                decoding="async"
-                                className="block h-auto w-full object-contain"
-                            />
+                            {image.video ? (
+                                <video
+                                    key={image.video.src}
+                                    aria-label={`${project.title} silent demo`}
+                                    controls
+                                    playsInline
+                                    preload="none"
+                                    poster={projectImageForTheme(image.image, theme)}
+                                    className="block aspect-video w-full bg-bg"
+                                >
+                                    <source src={image.video.src} type="video/mp4" />
+                                    <track
+                                        kind="captions"
+                                        src={image.video.captions}
+                                        srcLang="en"
+                                        label="English"
+                                    />
+                                    <a href={image.video.src}>Open the {project.title} demo video</a>
+                                </video>
+                            ) : (
+                                <img
+                                    src={projectImageForTheme(image.image, theme)}
+                                    alt={image.alt}
+                                    decoding="async"
+                                    className="block h-auto w-full object-contain"
+                                />
+                            )}
                         </div>
+
+                        {image.caption ? (
+                            <p className="mt-3 max-w-[72ch] shrink-0 text-xs leading-relaxed text-dim">
+                                {image.caption}
+                            </p>
+                        ) : null}
 
                         <div className="mt-3 flex shrink-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {project.gallery.map((item, index) => (
                                 <button
                                     key={item.label}
                                     type="button"
-                                    aria-label={`Show ${item.label} image`}
+                                    aria-label={item.video ? `Show ${item.label}` : `Show ${item.label} image`}
                                     aria-pressed={index === imageIndex}
                                     onClick={() => setImageIndex(index)}
                                     className={`min-w-[112px] flex-1 cursor-pointer border p-1 text-left ${
@@ -121,13 +148,23 @@ export default function ProjectGalleryDialog({
                                             : 'border-border'
                                     } ${FOCUS_RING}`}
                                 >
-                                    <img
-                                        src={projectImageForTheme(item.thumbnailImage, theme)}
-                                        alt=""
-                                        loading="lazy"
-                                        decoding="async"
-                                        className="aspect-video w-full object-cover"
-                                    />
+                                    <span className="relative block">
+                                        <img
+                                            src={projectImageForTheme(item.thumbnailImage, theme)}
+                                            alt=""
+                                            loading="lazy"
+                                            decoding="async"
+                                            className="aspect-video w-full object-cover"
+                                        />
+                                        {item.video ? (
+                                            <span
+                                                aria-hidden="true"
+                                                className="absolute inset-0 grid place-items-center bg-black/20 text-xl text-white"
+                                            >
+                                                ▶
+                                            </span>
+                                        ) : null}
+                                    </span>
                                     <span
                                         className={`mt-1.5 block text-[0.6875rem] ${
                                             index === imageIndex
@@ -173,7 +210,7 @@ export default function ProjectGalleryDialog({
 
                     <div
                         data-testid="project-gallery-copy"
-                        className="min-h-0 min-w-0 overflow-y-auto wide:py-8"
+                        className="min-h-0 min-w-0 shrink-0 wide:shrink wide:overflow-y-auto wide:py-8"
                     >
                         <p className={`text-label uppercase ${ACCENT_TEXT[project.accent]}`}>
                             {image.label}

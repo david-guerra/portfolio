@@ -44,7 +44,7 @@ describe('Projects section', () => {
             'Voice AI · LiveKit · Hackathon prototype',
             'Language design · C++ · Lexer complete',
         ])
-        expect(PROJECTS.map(({ gallery }) => gallery.length)).toEqual([4, 1, 1])
+        expect(PROJECTS.map(({ gallery }) => gallery.length)).toEqual([4, 8, 1])
         expect(PROJECTS.map(({ sourceUrl }) => sourceUrl)).toEqual([
             undefined,
             'https://github.com/david-guerra/Yoshida',
@@ -145,7 +145,9 @@ describe('Projects section', () => {
             basedProjects.every((project) =>
                 project.gallery.every((item) =>
                     themes.every((theme) =>
-                        projectImageForTheme(item.thumbnailImage, theme).endsWith('-thumbnail.png'),
+                        /-thumbnail\.(png|jpg)$/.test(
+                            projectImageForTheme(item.thumbnailImage, theme),
+                        ),
                     ),
                 ),
             ),
@@ -169,7 +171,7 @@ describe('Projects section', () => {
         ).toBe(true)
         expect(section?.querySelector('img[src*="arcade-"][src*="-light"]')).toBeNull()
         const themeNeutralAlts = [
-            'Yoshida call-to-booking workflow design reference',
+            'Yoshida cleaner dashboard showing a tentative request awaiting review',
             'Fest source text beside its lexer output and language design notes',
         ]
         const themeNeutralSources = themeNeutralAlts.map((name) =>
@@ -640,7 +642,7 @@ describe('Projects section', () => {
         expect(galleryMedia.classList).toContain('min-w-0')
         expect(galleryMedia.classList).toContain('wide:overflow-y-auto')
         expect(galleryCopy.classList).toContain('min-w-0')
-        expect(galleryCopy.classList).toContain('overflow-y-auto')
+        expect(galleryCopy.classList).toContain('wide:overflow-y-auto')
         expect(gallery.getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
         expect(gallery.getByText('01 / 04')).toBeTruthy()
         expect(
@@ -685,12 +687,44 @@ describe('Projects section', () => {
         expect(queryByRole('dialog')).toBeNull()
     })
 
-    test('hides gallery navigation when the selected project has one image', () => {
+    test('shows the Yoshida explainer on demand and preserves the captured app screens', () => {
         const { getByRole, getByTestId } = render(
             <ProjectsSection onScrollNext={() => undefined} />,
         )
 
         fireEvent.click(getByRole('button', { name: 'Select project: Yoshida' }))
+        const desktop = within(getByTestId('projects-desktop-content'))
+        fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
+
+        const gallery = within(getByRole('dialog'))
+        const video = gallery.getByLabelText('Yoshida silent demo') as HTMLVideoElement
+        expect(video.getAttribute('preload')).toBe('none')
+        expect(video.autoplay).toBe(false)
+        expect(video.getAttribute('poster')).toMatch(/yoshida-demo-poster\.jpg$/)
+        expect(video.querySelector('source')?.getAttribute('src')).toMatch(
+            /yoshida-silent-demo\.mp4$/,
+        )
+        expect(video.querySelector('track')?.getAttribute('src')).toMatch(
+            /yoshida-silent-demo\.vtt$/,
+        )
+        expect(gallery.getByText(/illustrative replay/i)).toBeTruthy()
+
+        fireEvent.click(gallery.getByRole('button', { name: 'Show Caller receipt image' }))
+        expect(gallery.queryByLabelText('Yoshida silent demo')).toBeNull()
+        expect(gallery.getByRole('img', { name: /German browser call simulator.*tentative receipt/i })).toBeTruthy()
+        expect(gallery.getByText(/reconstructed from a saved.*call/i)).toBeTruthy()
+
+        fireEvent.click(gallery.getByRole('button', { name: 'Show Confirmed image' }))
+        expect(gallery.getByRole('img', { name: /confirmed appointment.*cleaner dashboard/i })).toBeTruthy()
+        expect(gallery.getByText(/persisted.*spoken call/i)).toBeTruthy()
+    })
+
+    test('hides gallery navigation when the selected project has one image', () => {
+        const { getByRole, getByTestId } = render(
+            <ProjectsSection onScrollNext={() => undefined} />,
+        )
+
+        fireEvent.click(getByRole('button', { name: 'Select project: Fest' }))
         const desktop = within(getByTestId('projects-desktop-content'))
         fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
 
