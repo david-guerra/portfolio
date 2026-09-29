@@ -10,6 +10,7 @@ export interface GalleryItem {
     thumbnailImage: ProjectImage
     alt: string
     caption?: string
+    orientation?: 'portrait'
     video?: {
         src: string
         captions: string
@@ -177,6 +178,7 @@ export const PROJECTS: readonly Project[] = [
                 image: projectImage('yoshida-cleaner-mobile.jpg'),
                 thumbnailImage: projectImage('yoshida-cleaner-mobile-thumbnail.jpg'),
                 alt: 'Yoshida cleaner Requests inbox in a 375-pixel-wide mobile viewport',
+                orientation: 'portrait',
                 caption:
                     'The staged example request in the running cleaner dashboard at a 375-pixel mobile width.',
             },

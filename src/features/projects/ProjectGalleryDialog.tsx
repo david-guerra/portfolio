@@ -123,7 +123,11 @@ export default function ProjectGalleryDialog({
                                     src={projectImageForTheme(image.image, theme)}
                                     alt={image.alt}
                                     decoding="async"
-                                    className="block h-auto w-full object-contain"
+                                    className={`block h-auto object-contain ${
+                                        image.orientation === 'portrait'
+                                            ? 'mx-auto max-h-[40dvh] w-auto max-w-full wide:max-h-[60dvh]'
+                                            : 'w-full'
+                                    }`}
                                 />
                             )}
                         </div>
