@@ -9,6 +9,9 @@ The Arcade captures were taken from the shipped portfolio and its production bui
 the manual site theme selects the matching file. Yoshida uses theme-neutral captures from its
 [public showcase](https://github.com/david-guerra/Yoshida/blob/main/docs/showcase.md), made with
 fictional data. Its optional silent video uses `preload="none"` and appears only in the gallery.
+Couple HQ is a private personal household project. Its captures show the real interface with
+fictional Alex/Jamie records in a disposable local preview; no household data or private source
+is included in this portfolio.
 
 ## Performance budget
 
@@ -22,10 +25,10 @@ bytes (~597 KiB), and every individual file is below its cap. Both sets occupy 1
 
 | File | Slot | Source | Format | Dimensions | Bytes | Status |
 | --- | --- | --- | --- | --- | ---: | --- |
-| `browser-arcade-carousel-light.png` | 01 · Arcade, compiled · light | Production Arcade hub, light desktop capture | PNG | 1600 × 900 | 149,919 | **Current capture** |
-| `browser-arcade-carousel-dark.png` | 01 · Arcade, compiled · dark | Production Arcade hub, dark desktop capture | PNG | 1600 × 900 | 142,435 | **Current capture** |
+| `couple-hq-carousel.jpg` | 01 · Couple HQ | Top 1280 × 720 crop of the demo Home capture | JPEG | 1280 × 720 | 103,412 | **Current demo capture** |
 | `yoshida-cleaner-requests.jpg` | 02 · Yoshida | Yoshida cleaner dashboard, staged tentative request | JPEG | 1280 × 720 | 51,769 | **Current capture** |
-| `compiler-carousel.png` | 03 · Fest | Claude Design `assets/project-compiler.png` | PNG | 1672 × 941 | 1,314,786 | **Placeholder** — Fest is currently at lexer-complete stage |
+| `browser-arcade-carousel-light.png` | 03 · Arcade, compiled · light | Production Arcade hub, light desktop capture | PNG | 1600 × 900 | 149,919 | **Current capture** |
+| `browser-arcade-carousel-dark.png` | 03 · Arcade, compiled · dark | Production Arcade hub, dark desktop capture | PNG | 1600 × 900 | 142,435 | **Current capture** |
 
 ## Arcade gallery
 
@@ -74,6 +77,32 @@ metadata, per the source showcase. The video and WebVTT file live in `../project
 | `yoshida-silent-demo.mp4` | H.264 MP4 | 1600 × 900 / 58 seconds | 3,623,760 |
 | `yoshida-silent-demo.vtt` | WebVTT timed text | 58 seconds | 784 |
 
+## Couple HQ gallery
+
+Imported from the user-supplied `couple-hq-portfolio-handoff-2026-11-06.zip`, captured on
+6 November 2026 against source snapshot `fe0c75da2d32b424c3f0a4e683f5b89e21f5e517`.
+The original full-resolution JPEGs are preserved. Captures used the actual app UI with a local
+read-only fixture adapter, English text, and fictional household records. They illustrate the
+interface; they do not establish production backend or external integration behavior.
+Each gallery caption identifies the data as fictional. Telegram is an implemented cleaning
+assistant; these screenshots do not show or verify Telegram delivery.
+
+| File | Source capture | Dimensions | Bytes |
+| --- | --- | --- | ---: |
+| `couple-hq-home-desktop.jpg` | 01 · Home, desktop | 1280 × 993 | 84,072 |
+| `couple-hq-home-mobile.jpg` | 21 · Home, mobile | 390 × 844 | 48,843 |
+| `couple-hq-handover.jpg` | 19 · Handover overview | 1280 × 1471 | 109,527 |
+| `couple-hq-cleaning.jpg` | 06 · Cleaning areas | 1280 × 960 | 92,141 |
+| `couple-hq-playbook.jpg` | 08 · Cleaning Playbook | 1280 × 2088 | 180,872 |
+| `couple-hq-wishlist.jpg` | 15 · Wishlist comparison | 1280 × 757 | 45,949 |
+| `couple-hq-meals-shopping.jpg` | 12 · Meals to Shopping | 1280 × 720 | 54,473 |
+| `couple-hq-money.jpg` | 13 · Money overview | 1280 × 1484 | 118,682 |
+
+All eight have 480 × 270 `-thumbnail.jpg` derivatives. Desktop thumbnails use the top 1280 × 720
+of the source, resized to 480 × 270 (a one-pixel top offset avoids `sips` treating zero as a centered crop). The mobile thumbnail fits the full height onto a cream
+480 × 270 canvas. Thumbnails total 173,911 bytes; full images, thumbnails, and the carousel
+total 1,011,882 bytes. Regenerate derivatives with macOS `sips`; full captures stay unchanged.
+
 ## Gallery thumbnails
 
 The PNG gallery thumbnail derivatives use the original basename plus `-thumbnail.png`.
@@ -90,7 +119,6 @@ the full source with its thumbnail. Yoshida's JPEG derivatives are listed above.
 | `arcade-gallery-03-sudoku-dark-thumbnail.png` | `arcade-gallery-03-sudoku-dark.png` | PNG | 480 × 300 | 8,561 | **Current derivative** |
 | `arcade-gallery-04-game-of-life-light-thumbnail.png` | `arcade-gallery-04-game-of-life-light.png` | PNG | 480 × 300 | 13,338 | **Current derivative** |
 | `arcade-gallery-04-game-of-life-dark-thumbnail.png` | `arcade-gallery-04-game-of-life-dark.png` | PNG | 480 × 300 | 10,343 | **Current derivative** |
-| `compiler-carousel-thumbnail.png` | `compiler-carousel.png` | PNG | 480 × 270 | 163,206 | **Placeholder derivative** |
 
 ## Social sharing
 

@@ -223,6 +223,25 @@ export default function ProjectGalleryDialog({
                             {project.title}
                         </h2>
                         <p className="mt-5 text-body-mono text-body">{project.description}</p>
+                        {project.story?.length ? (
+                            <details className="mt-6 border-t border-border pt-4">
+                                <summary
+                                    className={`cursor-pointer text-sm text-ink ${FOCUS_RING}`}
+                                >
+                                    The story so far
+                                </summary>
+                                <div className="mt-5 space-y-6">
+                                    {project.story.map((chapter) => (
+                                        <section key={chapter.title}>
+                                            <h3 className="text-base text-ink">{chapter.title}</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-body">
+                                                {chapter.text}
+                                            </p>
+                                        </section>
+                                    ))}
+                                </div>
+                            </details>
+                        ) : null}
                         <div className="mt-7 flex flex-wrap gap-6">
                             {project.action === 'play-arcade' ? (
                                 <button

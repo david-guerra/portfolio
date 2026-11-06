@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import App from '../src/App.tsx'
 import { PROJECTS } from '../src/features/projects/projects.ts'
 import ProjectsSection from '../src/features/projects/ProjectsSection.tsx'
+import ProjectGalleryDialog from '../src/features/projects/ProjectGalleryDialog.tsx'
 
 vi.mock('../src/components/Hero.tsx', () => ({
     default: () => <div data-testid="hero-stub" />,
@@ -35,16 +36,16 @@ function renderProjects() {
 describe('Projects section', () => {
     test('keeps the approved order, maturity claims, and publishable gallery boundaries', () => {
         expect(PROJECTS.map(({ title }) => title)).toEqual([
-            'Arcade, compiled',
+            'Couple HQ',
             'Yoshida',
-            'Fest',
+            'Arcade, compiled',
         ])
         expect(PROJECTS.map(({ tag, status }) => `${tag} · ${status}`)).toEqual([
-            'C · WebAssembly · Shipped',
+            'Next.js · Supabase · Private household app',
             'Voice AI · LiveKit · Hackathon prototype',
-            'Language design · C++ · Lexer complete',
+            'C · WebAssembly · Shipped',
         ])
-        expect(PROJECTS.map(({ gallery }) => gallery.length)).toEqual([4, 8, 1])
+        expect(PROJECTS.map(({ gallery }) => gallery.length)).toEqual([8, 8, 4])
         expect(PROJECTS.map(({ sourceUrl }) => sourceUrl)).toEqual([
             undefined,
             'https://github.com/david-guerra/Yoshida',
@@ -53,21 +54,18 @@ describe('Projects section', () => {
         expect(PROJECTS[1]?.description).toBe(
             'Our team built Yoshida at a LiveKit hackathon to help independent cleaners communicate with German-speaking clients. The prototype turns a German-language call into a tentative booking and shows it in a realtime dashboard with multilingual summaries. I built the voice agent and later helped integrate and refine the frontend and backend.',
         )
-        expect(PROJECTS[2]?.description).toBe(
-            'Rust and I didn’t quite click, so I did the sensible thing and started designing a language in C++. Fest currently has a full specification and a working lexer; the goal is a statically typed language targeting WebAssembly.',
-        )
     })
 
     test("renders every Arcade action from the project's semantic capability after rename and reorder", () => {
         const originalProjects = [...PROJECTS]
-        const [arcadeProject, cleanVoiceProject, festProject] = originalProjects
+        const [coupleProject, cleanVoiceProject, arcadeProject] = originalProjects
         const renamedArcadeProject = {
             ...arcadeProject,
             title: 'Renamed Arcade project',
             action: 'play-arcade' as const,
         }
         const mutableProjects = PROJECTS as unknown as Array<(typeof PROJECTS)[number]>
-        const reorderedProjects = [cleanVoiceProject, renamedArcadeProject, festProject]
+        const reorderedProjects = [cleanVoiceProject, renamedArcadeProject, coupleProject]
         let unmount: (() => void) | undefined
 
         mutableProjects.splice(0, mutableProjects.length, ...reorderedProjects)
@@ -172,13 +170,14 @@ describe('Projects section', () => {
         expect(section?.querySelector('img[src*="arcade-"][src*="-light"]')).toBeNull()
         const themeNeutralAlts = [
             'Yoshida cleaner dashboard showing a tentative request awaiting review',
-            'Fest source text beside its lexer output and language design notes',
+            'Couple HQ dashboard with shared tasks, shopping, money, and plans using fictional demo data',
         ]
         const themeNeutralSources = themeNeutralAlts.map((name) =>
             projects.getAllByRole('img', { name }).map((image) => image.getAttribute('src')),
         )
 
         const desktop = within(projects.getByTestId('projects-desktop-content'))
+        fireEvent.click(desktop.getByRole('button', { name: 'Select project: Arcade, compiled' }))
         fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
         const gallery = within(getByRole('dialog'))
         const galleryFrames = [
@@ -250,7 +249,7 @@ describe('Projects section', () => {
         ])
     })
 
-    test('leads with the approved Arcade project and exact copy', () => {
+    test('leads with the approved Couple HQ project and exact copy', () => {
         const { projects } = renderProjects()
         const desktop = within(projects.getByTestId('projects-desktop-content'))
 
@@ -264,17 +263,17 @@ describe('Projects section', () => {
             ),
         ).toBeTruthy()
         expect(
-            desktop.getByRole('heading', { level: 2, name: 'Arcade, compiled' }),
+            desktop.getByRole('heading', { level: 2, name: 'Couple HQ' }),
         ).toBeTruthy()
         expect(
-            within(desktop.getByRole('button', { name: 'Open Arcade, compiled gallery' })).getByText(
-                'C · WebAssembly',
+            within(desktop.getByRole('button', { name: 'Open Couple HQ gallery' })).getByText(
+                'Next.js · Supabase',
             ),
         ).toBeTruthy()
-        expect(desktop.getByText('Shipped')).toBeTruthy()
+        expect(desktop.getByText('Private household app')).toBeTruthy()
         expect(
             desktop.getByText(
-                'I wanted to see how much I could get the browser to handle on its own. Sudoku, Connect Four, and Game of Life are written in C and compiled to WebAssembly, with all of the game logic running on your machine.',
+                'Before my partner and I moved in together, I built us a shared headquarters. Couple HQ is our private household app for cleaning, groceries, meals, shared expenses, and plans. Claude connects through MCP for research and bulk updates. A Telegram bot makes cleaning quick to log and sends a gentle daily nudge.',
             ),
         ).toBeTruthy()
     })
@@ -293,14 +292,13 @@ describe('Projects section', () => {
 
         fireEvent.click(getByRole('button', { name: 'Previous project' }))
         fireEvent.click(getByRole('button', { name: 'Previous project' }))
-        expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
-
-        fireEvent.keyDown(section as HTMLElement, { key: 'ArrowRight' })
         expect(getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
 
+        fireEvent.keyDown(section as HTMLElement, { key: 'ArrowRight' })
+        expect(getByRole('heading', { level: 2, name: 'Couple HQ' })).toBeTruthy()
+
         fireEvent.click(getByRole('button', { name: 'Previous project' }))
-        expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
-        fireEvent.click(getByRole('button', { name: 'Next project' }))
+        expect(getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
         fireEvent.click(getByRole('button', { name: 'Play in Arcade ↓' }))
         expect(onScrollNext).toHaveBeenCalledOnce()
     })
@@ -310,7 +308,7 @@ describe('Projects section', () => {
             <ProjectsSection onScrollNext={() => undefined} />,
         )
         const rail = getByTestId('projects-desktop-rail')
-        const preview = getByRole('button', { name: 'Open Arcade, compiled gallery' })
+        const preview = getByRole('button', { name: 'Open Couple HQ gallery' })
         const setPointerCapture = vi.fn()
         const hasPointerCapture = vi.fn(() => true)
         const releasePointerCapture = vi.fn()
@@ -350,7 +348,7 @@ describe('Projects section', () => {
         const desktop = within(getByTestId('projects-desktop-content'))
         const projectIndex = getByRole('navigation', { name: 'Project index' })
         const cards = rail.querySelectorAll('[data-project-card]')
-        const selected = getByRole('button', { name: 'Open Arcade, compiled gallery' })
+        const selected = getByRole('button', { name: 'Open Couple HQ gallery' })
         const inactive = getByRole('button', { name: 'Center project: Yoshida' })
 
         expect(rail.classList).toContain('snap-x')
@@ -364,7 +362,7 @@ describe('Projects section', () => {
             expect(card.classList).toContain('snap-center')
         }
         expect(selected.classList).toContain('border')
-        expect(selected.classList).toContain('border-teal')
+        expect(selected.classList).toContain('border-orange')
         expect(selected.classList).toContain('z-10')
         expect(inactive.querySelector('img')?.classList).toContain('brightness-[0.64]')
         expect(within(inactive).getByText('Yoshida')).toBeTruthy()
@@ -379,17 +377,17 @@ describe('Projects section', () => {
             scrollLeft: { configurable: true, writable: true, value: 600 },
             scrollTo: { configurable: true, value: scrollTo },
         })
-        fireEvent.click(within(projectIndex).getByRole('button', { name: 'Select project: Fest' }))
+        fireEvent.click(within(projectIndex).getByRole('button', { name: 'Select project: Arcade, compiled' }))
 
-        expect(desktop.getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
+        expect(desktop.getByRole('heading', { level: 2, name: 'Couple HQ' })).toBeTruthy()
         expect(scrollTo).toHaveBeenCalledWith({ left: 1200, behavior: 'smooth' })
 
         rail.scrollLeft = 1200
         fireEvent.scroll(rail)
-        expect(desktop.getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
+        expect(desktop.getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
         expect(
             within(projectIndex)
-                .getByRole('button', { name: 'Select project: Fest' })
+                .getByRole('button', { name: 'Select project: Arcade, compiled' })
                 .getAttribute('aria-pressed'),
         ).toBe('true')
     })
@@ -482,14 +480,14 @@ describe('Projects section', () => {
         })
 
         fireEvent.scroll(rail)
-        expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
+        expect(getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
         act(() => vi.advanceTimersByTime(160))
         expect(scrollTo).toHaveBeenLastCalledWith({ left: 1200, behavior: 'auto' })
 
         scrollTo.mockClear()
         rail.scrollLeft = 1500
         fireEvent.scroll(rail)
-        expect(getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
+        expect(getByRole('heading', { level: 2, name: 'Couple HQ' })).toBeTruthy()
         act(() => vi.advanceTimersByTime(160))
         expect(scrollTo).toHaveBeenLastCalledWith({ left: 600, behavior: 'auto' })
     })
@@ -538,9 +536,9 @@ describe('Projects section', () => {
         expect(getByRole('heading', { level: 2, name: 'Yoshida' })).toBeTruthy()
         expect(scrollTo).not.toHaveBeenCalled()
 
-        fireEvent.click(getByRole('button', { name: 'Show Fest' }))
+        fireEvent.click(getByRole('button', { name: 'Show Arcade, compiled' }))
         expect(getByText('03 / 03')).toBeTruthy()
-        expect(getByRole('heading', { level: 2, name: 'Fest' })).toBeTruthy()
+        expect(getByRole('heading', { level: 2, name: 'Arcade, compiled' })).toBeTruthy()
     })
 
     test('scrolls the mobile deck when section keyboard navigation selects a project', () => {
@@ -614,6 +612,7 @@ describe('Projects section', () => {
             <ProjectsSection onScrollNext={onScrollNext} />,
         )
 
+        fireEvent.click(getByRole('button', { name: 'Select project: Arcade, compiled' }))
         fireEvent.click(getByRole('button', { name: 'Open gallery →' }))
         let dialog = getByRole('dialog')
         let gallery = within(dialog)
@@ -679,7 +678,7 @@ describe('Projects section', () => {
         fireEvent.click(gallery.getByRole('button', { name: 'Close gallery' }))
         expect(queryByRole('dialog')).toBeNull()
 
-        fireEvent.click(getByRole('button', { name: 'Open Arcade, compiled gallery' }))
+        fireEvent.click(getByRole('button', { name: 'Open gallery →' }))
         dialog = getByRole('dialog')
         gallery = within(dialog)
         fireEvent.click(gallery.getByRole('button', { name: 'Play in Arcade ↓' }))
@@ -719,15 +718,34 @@ describe('Projects section', () => {
         expect(gallery.getByText(/persisted.*spoken call/i)).toBeTruthy()
     })
 
-    test('hides gallery navigation when the selected project has one image', () => {
+    test('opens the private household project with demo media and an optional story', () => {
         const { getByRole, getByTestId } = render(
             <ProjectsSection onScrollNext={() => undefined} />,
         )
 
-        fireEvent.click(getByRole('button', { name: 'Select project: Fest' }))
+        fireEvent.click(getByRole('button', { name: 'Select project: Couple HQ' }))
         const desktop = within(getByTestId('projects-desktop-content'))
         fireEvent.click(desktop.getByRole('button', { name: 'Open gallery →' }))
 
+        const gallery = within(getByRole('dialog'))
+        expect(gallery.queryByRole('link', { name: /source|live|visit/i })).toBeNull()
+        expect(gallery.getByText(/fictional demo data/i)).toBeTruthy()
+        fireEvent.click(gallery.getByText('The story so far'))
+        expect(gallery.getByRole('heading', { level: 3, name: 'Before the move' })).toBeTruthy()
+
+        fireEvent.click(gallery.getByRole('button', { name: 'Show Home on mobile image' }))
+        expect(gallery.getByRole('img', { name: /mobile.*bottom navigation/i })).toBeTruthy()
+        expect(gallery.getByText('02 / 08')).toBeTruthy()
+    })
+
+    test('hides gallery navigation when the selected project has one image', () => {
+        const { getByRole } = render(
+            <ProjectGalleryDialog
+                project={{ ...PROJECTS[2], gallery: PROJECTS[2].gallery.slice(0, 1) }}
+                onClose={() => undefined}
+                onPlayArcade={() => undefined}
+            />,
+        )
         const gallery = within(getByRole('dialog'))
         expect(gallery.getByText('01 / 01')).toBeTruthy()
         expect(gallery.queryByRole('button', { name: 'Previous gallery image' })).toBeNull()
@@ -747,6 +765,7 @@ describe('Projects section', () => {
         Object.defineProperty(arcade, 'offsetTop', { configurable: true, value: 3140 })
 
         const desktop = within(projects.getByTestId('projects-desktop-content'))
+        fireEvent.click(desktop.getByRole('button', { name: 'Select project: Arcade, compiled' }))
         fireEvent.click(desktop.getByRole('button', { name: 'Play in Arcade ↓' }))
 
         expect(scrollTo).toHaveBeenCalledWith({ top: 3140 })
