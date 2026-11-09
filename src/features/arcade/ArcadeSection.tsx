@@ -202,7 +202,8 @@ export default function ArcadeSection({
                     </p>
                 </div>
 
-                <div className="mt-5 flex flex-1 items-center wide:mt-0">
+                {/* Reserve space for navigation; previews use this row's available height. */}
+                <div className="mt-5 flex flex-1 items-center wide:mt-0 wide:min-h-0 wide:[container-type:size]">
                     <div
                         ref={mobileDeckRef}
                         data-testid="arcade-mobile-deck"
@@ -241,7 +242,7 @@ export default function ArcadeSection({
                                         }`}
                                     >
                                         <Preview
-                                            className={`block aspect-[16/10] w-full ${
+                                            className={`block aspect-[16/10] w-full wide:max-h-[max(5rem,calc(100cqh-10.25rem))] ${
                                                 selected ? 'wide:aspect-[7/6]' : 'wide:aspect-[4/3]'
                                             }`}
                                         />
