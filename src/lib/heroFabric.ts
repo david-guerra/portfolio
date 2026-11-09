@@ -218,6 +218,22 @@ export function nameCells(
     return set
 }
 
+/* Phone glyphs have single-cell openings. Keep the surrounding cell empty so
+   confetti, its oversized edges, and touch recoloring cannot fill those gaps. */
+function mobileNameClearance(names: ReadonlySet<number>, cols: number, rows: number): Set<number> {
+    const clearance = new Set<number>()
+    for (const idx of names) {
+        const row = Math.floor(idx / cols)
+        const col = idx % cols
+        for (let r = Math.max(0, row - 1); r <= Math.min(rows - 1, row + 1); r++) {
+            for (let c = Math.max(0, col - 1); c <= Math.min(cols - 1, col + 1); c++) {
+                clearance.add(r * cols + c)
+            }
+        }
+    }
+    return clearance
+}
+
 /* Rect in cell coordinates that the fabric clears out (the name block). */
 export interface FadeRect {
     c0: number
@@ -247,11 +263,34 @@ export interface FabricCell {
     handoffThreshold?: number
 }
 
+/* Ordered square dithering opens up the gray weave without changing the seeded
+   name or confetti. Vary density slowly across the grid to avoid a flat dot field. */
+const GRAY_DITHER_ORDER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+
+function applyGrayDither(cell: FabricCell): void {
+    if (cell.kind === KIND_GRAY_HI) {
+        cell.sizeMul = 0.8
+        return
+    }
+    if (cell.kind !== KIND_GRAY_BASE && cell.kind !== KIND_GRAY_MID) return
+
+    const rank = (GRAY_DITHER_ORDER[(cell.r % 4) * 4 + (cell.c % 4)] + 0.5) / 16
+    const density = 0.5 + 0.5 * Math.sin(cell.c * 0.065 + cell.r * 0.035)
+    if (cell.kind === KIND_GRAY_BASE) {
+        cell.alpha = rank < 0.21 + density * 0.13 ? cell.alpha * 0.8 : 0
+        cell.sizeMul = 0.3
+    } else {
+        cell.alpha = rank < 0.52 + density * 0.12 ? cell.alpha * 0.9 : 0
+        cell.sizeMul = 0.53
+    }
+}
+
 export function buildFabric(layout: FabricLayout, seed: number, fadeRect?: FadeRect): FabricCell[] {
     const { cols, rows, clusterSize } = layout
     const rnd = mulberry32(seed)
     const handoffRnd = mulberry32(seed ^ 0x7f4a7c15)
     const names = nameCells(cols, rows, clusterSize)
+    const clearance = clusterSize === 1 ? mobileNameClearance(names, cols, rows) : null
     const cells: FabricCell[] = []
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -278,12 +317,15 @@ export function buildFabric(layout: FabricLayout, seed: number, fadeRect?: FadeR
                 kind = KIND_GRAY_BASE
                 alpha = 0.55 + rnd() * 0.45
             }
-            const baseAlpha = alpha
-            if (fadeRect) alpha *= fadeFactor(c, r, fadeRect, 8)
             const handoffThreshold = names.has(r * cols + c)
                 ? 0.05 + handoffRnd() * 0.4
                 : 0.25 + handoffRnd() * 0.75
-            cells.push({ c, r, kind, alpha, sizeMul, baseAlpha, handoffThreshold })
+            const cell: FabricCell = { c, r, kind, alpha, sizeMul, handoffThreshold }
+            applyGrayDither(cell)
+            if (kind !== KIND_NAME && clearance?.has(r * cols + c)) cell.alpha = 0
+            cell.baseAlpha = cell.alpha
+            if (fadeRect) cell.alpha *= fadeFactor(c, r, fadeRect, 8)
+            cells.push(cell)
         }
     }
     return cells
@@ -342,8 +384,8 @@ export function handoffCellAlpha(
     return restoredAlpha * wavefrontFactor(cell, pitch, p, viewportHeight)
 }
 
-/* Same-seed, same-pitch continuation used behind About. Its top 12% is a full
-   weave; the keep ramp reaches zero at 62%, leaving the editorial copy clear. */
+/* Same-seed, same-pitch continuation used behind About. Its top 12% keeps the
+   dithered weave; the keep ramp reaches zero at 62%, leaving the copy clear. */
 export function buildContinuum(layout: FabricLayout, seed: number): FabricCell[] {
     const { cols, rows } = layout
     const rnd = mulberry32(seed ^ 0x51f7)
@@ -375,7 +417,10 @@ export function buildContinuum(layout: FabricLayout, seed: number): FabricCell[]
                 alpha = (0.55 + rnd() * 0.45) * (0.6 + 0.4 * keep)
             }
 
-            cells.push({ c, r, kind, alpha, sizeMul, baseAlpha: alpha })
+            const cell: FabricCell = { c, r, kind, alpha, sizeMul }
+            applyGrayDither(cell)
+            cell.baseAlpha = cell.alpha
+            cells.push(cell)
         }
     }
     return cells
