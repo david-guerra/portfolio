@@ -298,7 +298,7 @@ test('the same seed weaves the same fabric', () => {
     assert.notDeepEqual(a, buildFabric(LAYOUT, 43))
 })
 
-test('every cell is filled and kinds are valid', () => {
+test('every grid position keeps a cell with a valid kind and opacity', () => {
     const cells = buildFabric(LAYOUT, 1)
     assert.equal(cells.length, 128 * 80)
     for (const cell of cells) {
@@ -309,7 +309,7 @@ test('every cell is filled and kinds are valid', () => {
                 cell.kind === KIND_GRAY_HI ||
                 KIND_ACCENTS.includes(cell.kind),
         )
-        assert.ok(cell.alpha > 0 && cell.alpha <= 1)
+        assert.ok(cell.alpha >= 0 && cell.alpha <= 1)
     }
 })
 
@@ -321,15 +321,17 @@ test('accent confetti thickens toward the right edge', () => {
     assert.ok(accents(2 * third, 3 * third) > 2 * accents(0, third))
 })
 
-test('only accents vary in size; some spill past their cell', () => {
+test('gray cells stay smaller than the name while accents can spill past their cell', () => {
     const cells = buildFabric(LAYOUT, 42)
     let spill = 0
     for (const cell of cells) {
         if (KIND_ACCENTS.includes(cell.kind)) {
             assert.ok(cell.sizeMul >= 0.85 && cell.sizeMul < 1.75)
             if (cell.sizeMul > 1) spill++
-        } else {
+        } else if (cell.kind === KIND_NAME) {
             assert.equal(cell.sizeMul, 1)
+        } else {
+            assert.ok(cell.sizeMul > 0 && cell.sizeMul < 1)
         }
     }
     assert.ok(spill > 0)
@@ -342,6 +344,36 @@ test('name cells are cream-kind with high alpha', () => {
         const isName = names.has(cell.r * LAYOUT.cols + cell.c)
         assert.equal(cell.kind === KIND_NAME, isName)
         if (isName) assert.ok(cell.alpha >= 0.85)
+    }
+})
+
+test('mobile letter openings and edges stay clear through rest, touch trails, and hand-off', () => {
+    for (const [width, height] of [[375, 761], [430, 881], [559, 749]]) {
+        const layout = layoutFabric(width, height)
+        const names = expectedSingleCellNameCells(
+            layout.cols, layout.rows, EXPECTED_MOBILE_GLYPHS, -1,
+        )
+        for (const seed of [1, 42, 19790527]) {
+            const cells = buildFabric(layout, seed)
+            const flips = new Map<number, FlipMotion>()
+            applyFlipTrail(cells, layout, flips, width / 2, height / 3, 1000, 100, 1, () => 0)
+
+            for (const idx of names) {
+                const r = Math.floor(idx / layout.cols)
+                const c = idx % layout.cols
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (r + dr < 0 || r + dr >= layout.rows || c + dc < 0 || c + dc >= layout.cols) continue
+                        const neighbor = (r + dr) * layout.cols + c + dc
+                        if (names.has(neighbor)) continue
+                        const cell = cells[neighbor]
+                        assert.equal(cell.alpha, 0, `background crowds a mobile glyph at ${cell.c},${cell.r}`)
+                        assert.ok(!flips.has(neighbor), 'touch trails must not color the letter clearance')
+                        assert.equal(heroFabric.handoffCellAlpha(cell, layout.pitch, 0.1, height), 0)
+                    }
+                }
+            }
+        }
     }
 })
 
@@ -624,7 +656,19 @@ test('the lower-left text void re-weaves with jitter as its copy fades away', ()
     assert.equal(textOpacity!(0.2), 0)
 })
 
-test('the About continuum is full-density at the seam and gone by sixty-two percent', () => {
+test('dither gaps stay empty when the scroll hand-off releases the copy void', () => {
+    const cells = buildFabric(LAYOUT, 42)
+    const gaps = cells.filter((cell) => cell.alpha === 0)
+
+    assert.ok(gaps.length > 0, 'the background has intentional dither gaps')
+    for (const cell of gaps) {
+        for (const progress of [0, 0.1, 0.25, 0.5, 1]) {
+            assert.equal(handoffApi.handoffCellAlpha!(cell, LAYOUT.pitch, progress, 800), 0)
+        }
+    }
+})
+
+test('the About continuum starts at its resting density and is gone by sixty-two percent', () => {
     const build = handoffApi.buildContinuum
     assert.equal(typeof build, 'function')
 
@@ -635,7 +679,8 @@ test('the About continuum is full-density at the seam and gone by sixty-two perc
     const seamKinds = new Set(seam.map((cell) => cell.kind))
 
     assert.equal(cells.length, layout.cols * layout.rows)
-    assert.ok(seam.every((cell) => cell.alpha > 0), 'the top twelve percent is a full weave')
+    assert.ok(seam.some((cell) => cell.alpha === 0), 'the seam keeps the dither gaps')
+    assert.ok(seam.some((cell) => cell.alpha > 0), 'the seam keeps the visible weave')
     assert.ok(KIND_ACCENTS.every((kind) => seamKinds.has(kind)), 'all accents reach the seam')
     assert.ok(seamKinds.has(KIND_GRAY_BASE))
     assert.ok(seamKinds.has(KIND_GRAY_MID))
